@@ -1,1 +1,5 @@
-logs.txt
+obj
+bin
+.vs
+*.user
+/Examples/Properties/PublishProfiles/FolderProfile.pubxml
