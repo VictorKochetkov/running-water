@@ -17,5 +17,11 @@ Import-Module Posh-SSH
 
 Set-SCPItem -ComputerName $RemoteHost -Credential $Credentials -Path bin\Release\net5.0\publish\RunningWater.Raspberry -Destination Desktop -Verbose
 
-
-plink.exe -ssh "$($User)@$($RemoteHost)" -pw $Password -t -batch 'chmod 777 Desktop/./RunningWater.Raspberry ; sudo Desktop/./RunningWater.Raspberry'
+IF ($IsWindows)
+{
+    plink.exe -ssh "$($User)@$($RemoteHost)" -pw $Password -t -batch 'chmod 777 Desktop/./RunningWater.Raspberry ; sudo Desktop/./RunningWater.Raspberry'
+}
+else
+{
+    ssh -t rdp@192.168.1.54 'chmod 777 Desktop/./RunningWater.Raspberry ; sudo Desktop/./RunningWater.Raspberry'
+}
