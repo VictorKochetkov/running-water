@@ -1,51 +1,76 @@
-﻿using DotnetBleServer.Advertisements;
+﻿using System;
+using System.Buffers;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+using DotnetBleServer.Advertisements;
 using DotnetBleServer.Core;
 using DotnetBleServer.Gatt;
 using DotnetBleServer.Gatt.Description;
+using RunningWater.Raspberry.Attributes;
 using RunningWater.Raspberry.Interfaces;
 using RunningWater.Raspberry.Util;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RunningWater.Raspberry.Sources
 {
     /// <summary>
     /// 
     /// </summary>
-    internal class MobileAppBackendCharacteristic : ICharacteristicSource
-    {
-        private readonly IWateringJob job;
-
-        static int count = 0;
-
-        public MobileAppBackendCharacteristic(IWateringJob job)
-        {
-            this.job = job;
-        }
-
-        public Task WriteValueAsync(byte[] value)
-        {
-            Console.WriteLine("Writing value");
-            return Task.Run(() => Console.WriteLine(Encoding.ASCII.GetChars(value)));
-        }
-
-        public Task<byte[]> ReadValueAsync()
-        {
-            Console.WriteLine("Reading value");
-            return Task.FromResult(Encoding.ASCII.GetBytes($"Hello BLE {count++}"));
-        }
-    }
-
-    public class GattServer : IGattServer
+    public class ActionRequest
     {
         /// <summary>
         /// 
         /// </summary>
-        public void Start()
+        [JsonPropertyName("a")]
+        public string Action { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonPropertyName("v")]
+        public IDictionary<string, object> Values { get; set; }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class GattServer : IGattServer
+    {
+        private readonly ILogicService logic;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="logic"></param>
+        public GattServer(ILogicService logic)
+            => this.logic = logic;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public Task ExecuteAsync()
         {
+            // Disable bluetooth discovery timeout
+            "sudo sed -i 's/^#DiscoverableTimeout = .*/DiscoverableTimeout = 0/' /etc/bluetooth/main.conf".Bash();
+
+            // Turn on bluetooth
+            "sudo bluetoothctl power on".Bash();
+
+            // Make bluetooth discoverable
+            "sudo bluetoothctl discoverable on".Bash();
+
+            // Disable pairing to prevent system popup displaying on mobile app
+            "sudo bluetoothctl pairable off".Bash();
+
+            // Disable pairing to prevent system popup displaying on mobile app
+            "sudo bluetoothctl agent NoInputNoOutput".Bash();
+
+
+
             // BLE GATT server configuration
             Task.Run(async () =>
             {
@@ -60,37 +85,96 @@ namespace RunningWater.Raspberry.Sources
                         LocalName = "Raspberry BLE",
                     });
 
-                    var serviceDescription = new GattServiceDescription
-                    {
-                        UUID = "12345678-1234-5678-1234-56789abcdef0",
-                        Primary = true
-                    };
+                    var builder = new GattApplicationBuilder();
 
-                    var characteristicDescription = new GattCharacteristicDescription
-                    {
-                        CharacteristicSource = new MobileAppBackendCharacteristic(null),
-                        UUID = "12345678-1234-5678-1234-56789abcdef1",
-                        Flags = new[] { "read", "write", "writable-auxiliaries" }
-                    };
+                    builder
+                        .AddService(new GattServiceDescription
+                        {
+                            UUID = "12345678-1234-5678-1234-56789abcdef0",
+                            Primary = true
+                        })
+                        .WithCharacteristic(new GattCharacteristicDescription
+                        {
+                            UUID = "12345678-1234-5678-1234-56789abcdef1",
+                            Flags = new[] { "read", "write", "writable-auxiliaries" },
+                            CharacteristicSource = new GenericCharacteristic(
+                                async () =>
+                                {
+                                    "Read value".Console();
 
-                    var descriptorDescription = new GattDescriptorDescription
-                    {
-                        Value = new[] { (byte)'t' },
-                        UUID = "12345678-1234-5678-1234-56789abcdef2",
-                        Flags = new[] { "read", "write" }
-                    };
+                                    try
+                                    {
+                                        return await Task.FromResult(new byte[] { 123 });
+                                    }
+                                    catch (Exception exception)
+                                    {
+                                        exception.ToString().Console();
+                                        throw;
+                                    }
+                                },
+                                async value =>
+                                {
+                                    "Write value".Console();
 
-                    var gab = new GattApplicationBuilder();
-                    gab
-                        .AddService(serviceDescription)
-                        .WithCharacteristic(characteristicDescription, new[] { descriptorDescription });
+                                    try
+                                    {
+                                        var request = JsonSerializer.Deserialize<ActionRequest>(value);
 
-                    await new GattApplicationManager(context).RegisterGattApplication(gab.BuildServiceDescriptions());
+                                        $"Action -> {request.Action}".Console();
+
+                                        await logic.ExecuteAsync(request.Action, request.Values);
+                                    }
+                                    catch (Exception exception)
+                                    {
+                                        exception.ToString().Console();
+                                        throw;
+                                    }
+                                }),
+                        },
+                        new[]
+                        {
+                            new GattDescriptorDescription
+                            {
+                                UUID = "12345678-1234-5678-1234-56789abcdef2",
+                                Flags = new[] { "read", "write" },
+                                Value = new[] { (byte)'t' },
+                            }
+                        });
+
+                    await new GattApplicationManager(context)
+                        .RegisterGattApplication(builder.BuildServiceDescriptions());
 
                     await TaskHelper.WaitInfinite();
                 }
             });
 
+            return Task.FromResult(true);
         }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class GenericCharacteristic : ICharacteristicSource
+    {
+        private Func<Task<byte[]>> read;
+        private Func<byte[], Task> write;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="read"></param>
+        /// <param name="write"></param>
+        public GenericCharacteristic(Func<Task<byte[]>> read, Func<byte[], Task> write)
+        {
+            this.read = read;
+            this.write = write;
+        }
+
+        /// <inheritdoc/>
+        public Task WriteValueAsync(byte[] value) => write(value);
+
+        /// <inheritdoc/>
+        public Task<byte[]> ReadValueAsync() => read();
     }
 }

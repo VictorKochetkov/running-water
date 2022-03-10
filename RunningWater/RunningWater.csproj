@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
   </PropertyGroup>
 
@@ -13,11 +13,12 @@
   <ItemGroup>
     <PackageReference Include="Xamarin.Forms" Version="5.0.0.2337" />
     <PackageReference Include="Xamarin.Essentials" Version="1.7.1" />
-    <PackageReference Include="Plugin.BLE" Version="2.1.2" />
     <PackageReference Include="ReactiveUI.XamForms" Version="17.1.50" />
     <PackageReference Include="ReactiveUI.Fody" Version="17.1.50" />
     <PackageReference Include="Xamarin.CommunityToolkit" Version="2.0.0" />
     <PackageReference Include="System.Text.Json" Version="6.0.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+    <PackageReference Include="Shiny.BluetoothLE" Version="2.4.3.3003" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Plugin.BLE" />
@@ -26,8 +27,17 @@
     <None Remove="ReactiveUI.Fody" />
     <None Remove="Xamarin.CommunityToolkit" />
     <None Remove="System.Text.Json" />
+    <None Remove="Sources\" />
+    <None Remove="Interfaces\" />
+    <None Remove="Microsoft.Extensions.DependencyInjection" />
+    <None Remove="Plugin.BluetoothLE" />
+    <None Remove="Shiny.BluetoothLE" />
+    <None Remove="Pages\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="ViewModels\" />
+    <Folder Include="Sources\" />
+    <Folder Include="Interfaces\" />
+    <Folder Include="Pages\" />
   </ItemGroup>
 </Project>

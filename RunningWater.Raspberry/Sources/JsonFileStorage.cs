@@ -1,19 +1,38 @@
-﻿using RunningWater.Raspberry.Interfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Text;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
+using RunningWater.Raspberry.Interfaces;
+using RunningWater.Raspberry.Util;
 
 namespace RunningWater.Raspberry.Sources
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class JsonFileStorage : IStorage
     {
-        private static readonly SemaphoreSlim locker = new SemaphoreSlim(1, 1);
-        private static readonly Dictionary<string, object> values = new Dictionary<string, object>();
+        private static Dictionary<string, object> values = new Dictionary<string, object>();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public JsonFileStorage()
+        {
+            lock (typeof(JsonFileStorage))
+            {
+                if (!File.Exists(ConfigPath))
+                {
+                    return;
+                }
+
+                using (var file = File.OpenRead(ConfigPath))
+                {
+                    values = JsonSerializer.Deserialize<Dictionary<string, object>>(file);
+                }
+            }
+        }
 
         /// <summary>
         /// 
@@ -22,11 +41,15 @@ namespace RunningWater.Raspberry.Sources
         /// <param name="key"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public Task<TValue> GetValueAsync<TValue>(string key, TValue defaultValue = default(TValue)) => LockedAsync(() =>
+        public TValue GetValue<TValue>(string key, TValue defaultValue = default(TValue)) => Locked(() =>
         {
-            if (values.TryGetValue(key, out object value) && value is TValue typedValue)
+            if (values.ContainsKey(key))
             {
-                return typedValue;
+                if (values[key] is JsonElement jsonElement && jsonElement.TryToObject(out TValue value))
+                    values[key] = value;
+
+                if (values[key] is TValue typedValue)
+                    return typedValue;
             }
 
             return defaultValue;
@@ -35,41 +58,40 @@ namespace RunningWater.Raspberry.Sources
         /// <summary>
         /// 
         /// </summary>
-        /// <typeparam name="TValue"></typeparam>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        /// <returns></returns>
-        public Task SetValueAsync<TValue>(string key, TValue value) => LockedAsync(() =>
+        public void SetValue(string key, object value) => Locked(() =>
         {
             if (!values.TryAdd(key, value))
             {
                 values[key] = value;
             }
 
-            return WriteJsonAsync();
+            WriteJson();
         });
 
         /// <summary>
         /// 
         /// </summary>
-        private static async Task WriteJsonAsync()
+        private static void WriteJson() => Locked(() =>
         {
-            string path = Assembly.GetEntryAssembly().Location;
-            string directory = Path.GetDirectoryName(path);
-            string jsonFilePath = Path.Combine(directory, "config.json");
-
-            using (var file = File.OpenWrite(jsonFilePath))
+            using (var file = File.OpenWrite(ConfigPath))
             {
-                await JsonSerializer.SerializeAsync(file, values);
+                JsonSerializer.Serialize(file, values);
             }
-        }
+        });
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private static string ConfigPath => Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) ?? string.Empty, "config.json");
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="action"></param>
         /// <returns></returns>
-        private static Task LockedAsync(Action action) => LockedAsync(() =>
+        private static void Locked(Action action) => Locked(() =>
         {
             action();
             return true;
@@ -81,17 +103,11 @@ namespace RunningWater.Raspberry.Sources
         /// <typeparam name="TValue"></typeparam>
         /// <param name="action"></param>
         /// <returns></returns>
-        private static async Task<TValue> LockedAsync<TValue>(Func<TValue> action)
+        private static TValue Locked<TValue>(Func<TValue> action)
         {
-            await locker.WaitAsync();
-
-            try
+            lock (typeof(JsonFileStorage))
             {
                 return action();
-            }
-            finally
-            {
-                locker.Release();
             }
         }
     }

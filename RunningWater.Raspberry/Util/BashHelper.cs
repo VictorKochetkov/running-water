@@ -5,7 +5,7 @@ namespace RunningWater.Raspberry.Util
     /// <summary>
     /// 
     /// </summary>
-    public static class ShellHelper
+    public static class BashHelper
     {
         /// <summary>
         /// 

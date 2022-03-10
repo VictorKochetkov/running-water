@@ -1,4 +1,5 @@
 ﻿using RunningWater.Raspberry.Interfaces;
+using RunningWater.Raspberry.Util;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,100 +11,25 @@ namespace RunningWater.Raspberry.Sources
     /// </summary>
     public class WateringJob : IWateringJob
     {
-        private readonly IStorage storage;
         private readonly IUsbController usbController;
-
-        private CancellationTokenSource source;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="storage"></param>
         /// <param name="usbController"></param>
-        public WateringJob(IStorage storage, IUsbController usbController)
+        public WateringJob(IUsbController usbController)
         {
-            this.storage = storage;
             this.usbController = usbController;
         }
 
         /// <summary>
         /// 
         /// </summary>
-        private bool IsRunning
+        public async Task ExecuteAsync()
         {
-            get
-            {
-                lock (typeof(WateringJob))
-                {
-                    return source != null;
-                }
-            }
-        }
+            "Watering job started".Console();
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public void Start()
-        {
-            lock (typeof(WateringJob))
-            {
-                if (IsRunning)
-                {
-                    Console.WriteLine("Job is already running");
-                    return;
-                }
-
-                source = new CancellationTokenSource();
-
-                usbController.DisableUsb();
-
-                Task.Run(async () =>
-                {
-                    if (await GetPeriod() is not TimeSpan delay)
-                        return;
-
-                    while (IsRunning)
-                    {
-                        await Task.Delay(delay, source.Token);
-
-                        if (!IsRunning)
-                            return;
-
-                        await Execute();
-                    }
-                });
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        private async Task SetPeriod(TimeSpan? value)
-        {
-            await storage.SetValueAsync("period", value);
-
-            lock (typeof(WateringJob))
-            {
-                source?.Cancel();
-                source = null;
-
-                Start();
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        private Task<TimeSpan?> GetPeriod() => storage.GetValueAsync<TimeSpan?>("period");
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private async Task Execute()
-        {
             // Turn on power on all USB ports 
             usbController.EnableUsb();
 
@@ -112,6 +38,8 @@ namespace RunningWater.Raspberry.Sources
 
             // Then turn off power on all USB port again
             usbController.DisableUsb();
+
+            "Watering job finished".Console();
         }
     }
 }

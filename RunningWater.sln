@@ -9,8 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RunningWater.iOS", "Running
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RunningWater", "RunningWater\RunningWater.csproj", "{9ED7C664-E0AE-4E36-AFE5-681CC92A3447}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RunningWater.Core", "RunningWater.Core\RunningWater.Core.csproj", "{E80F74E4-2FDA-466B-BEE1-E3CF5622DEDB}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RunningWater.Raspberry", "RunningWater.Raspberry\RunningWater.Raspberry.csproj", "{B81D5433-07DB-40EF-A69E-8113816E756A}"
 EndProject
 Global
@@ -59,18 +57,6 @@ Global
 		{9ED7C664-E0AE-4E36-AFE5-681CC92A3447}.Debug|iPhone.Build.0 = Debug|Any CPU
 		{9ED7C664-E0AE-4E36-AFE5-681CC92A3447}.Release|iPhone.ActiveCfg = Release|Any CPU
 		{9ED7C664-E0AE-4E36-AFE5-681CC92A3447}.Release|iPhone.Build.0 = Release|Any CPU
-		{E80F74E4-2FDA-466B-BEE1-E3CF5622DEDB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E80F74E4-2FDA-466B-BEE1-E3CF5622DEDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E80F74E4-2FDA-466B-BEE1-E3CF5622DEDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E80F74E4-2FDA-466B-BEE1-E3CF5622DEDB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E80F74E4-2FDA-466B-BEE1-E3CF5622DEDB}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
-		{E80F74E4-2FDA-466B-BEE1-E3CF5622DEDB}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
-		{E80F74E4-2FDA-466B-BEE1-E3CF5622DEDB}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
-		{E80F74E4-2FDA-466B-BEE1-E3CF5622DEDB}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{E80F74E4-2FDA-466B-BEE1-E3CF5622DEDB}.Debug|iPhone.ActiveCfg = Debug|Any CPU
-		{E80F74E4-2FDA-466B-BEE1-E3CF5622DEDB}.Debug|iPhone.Build.0 = Debug|Any CPU
-		{E80F74E4-2FDA-466B-BEE1-E3CF5622DEDB}.Release|iPhone.ActiveCfg = Release|Any CPU
-		{E80F74E4-2FDA-466B-BEE1-E3CF5622DEDB}.Release|iPhone.Build.0 = Release|Any CPU
 		{B81D5433-07DB-40EF-A69E-8113816E756A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B81D5433-07DB-40EF-A69E-8113816E756A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B81D5433-07DB-40EF-A69E-8113816E756A}.Release|Any CPU.ActiveCfg = Release|Any CPU

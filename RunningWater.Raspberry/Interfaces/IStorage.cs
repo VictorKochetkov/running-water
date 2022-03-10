@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace RunningWater.Raspberry.Interfaces
+﻿namespace RunningWater.Raspberry.Interfaces
 {
     /// <summary>
     /// 
@@ -14,15 +12,14 @@ namespace RunningWater.Raspberry.Interfaces
         /// <param name="key"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        Task<TValue> GetValueAsync<TValue>(string key, TValue defaultValue = default(TValue));
+        TValue GetValue<TValue>(string key, TValue defaultValue = default(TValue));
 
         /// <summary>
         /// 
         /// </summary>
-        /// <typeparam name="TValue"></typeparam>
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        Task SetValueAsync<TValue>(string key, TValue value);
+        void SetValue(string key, object value);
     }
 }

@@ -15,13 +15,14 @@ $Credentials = New-Object System.Management.Automation.PSCredential($User, $secp
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted
 Import-Module Posh-SSH
 
-Set-SCPItem -ComputerName $RemoteHost -Credential $Credentials -Path bin\Release\net5.0\publish\RunningWater.Raspberry -Destination Desktop -Verbose
+Set-SCPItem -ComputerName $RemoteHost -Credential $Credentials -Path bin\Release\net5.0\publish\RunningWater.Raspberry -Destination . -Verbose
+Set-SCPItem -ComputerName $RemoteHost -Credential $Credentials -Path bin\Release\net5.0\publish\appsettings.json -Destination . -Verbose
 
 IF ($IsWindows)
 {
-    plink.exe -ssh "$($User)@$($RemoteHost)" -pw $Password -t -batch 'chmod 777 Desktop/./RunningWater.Raspberry ; sudo Desktop/./RunningWater.Raspberry'
+    plink.exe -ssh "$($User)@$($RemoteHost)" -pw $Password -t -batch 'chmod 777 ./RunningWater.Raspberry ; sudo ./RunningWater.Raspberry'
 }
 else
 {
-    ssh -t rdp@192.168.1.54 'chmod 777 Desktop/./RunningWater.Raspberry ; sudo Desktop/./RunningWater.Raspberry'
+    ssh -t rdp@192.168.1.54 'chmod 777 ./RunningWater.Raspberry ; sudo ./RunningWater.Raspberry'
 }
