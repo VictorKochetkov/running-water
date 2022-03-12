@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<pages:BasePage
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:pages="clr-namespace:RunningWater.Pages"
+    x:Class="RunningWater.Pages.StartPage">
+
+    <StackLayout
+        Padding="32"
+        HorizontalOptions="Center"
+        VerticalOptions="Center"
+        Spacing="12">
+        <ActivityIndicator
+            WidthRequest="24"
+            HeightRequest="24"
+            IsRunning="True"
+            IsEnabled="True"
+            Color="Black" />
+        <Label
+            HorizontalOptions="Center"
+            HorizontalTextAlignment="Center"
+            TextColor="LightGray"
+            Text="Connecting to device. Please, wait..." />
+    </StackLayout>
+
+</pages:BasePage>

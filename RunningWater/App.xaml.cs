@@ -44,8 +44,10 @@ namespace RunningWater
 
             // Add core services
             services.AddSingleton<IApiClient, BluetoothApiClient>();
+            services.AddSingleton<INavigationService, NavigationService>();
 
             // Add view models
+            services.AddTransient<StartViewModel>();
             services.AddTransient<MainViewModel>();
         }
 
@@ -69,7 +71,7 @@ namespace RunningWater
         public App()
         {
             InitializeComponent();
-            MainPage = new MainPage();
+            MainPage = new NavigationPage(new StartPage());
         }
 
         /// <summary>

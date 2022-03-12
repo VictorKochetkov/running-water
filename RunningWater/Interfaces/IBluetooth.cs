@@ -21,8 +21,16 @@ namespace RunningWater.Interfaces
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="characteristicId"></param>
         /// <param name="data"></param>
         /// <returns></returns>
-        Task WriteAsync(byte[] data);
+        Task WriteAsync(string characteristicId, byte[] data);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="characteristicId"></param>
+        /// <returns></returns>
+        Task<byte[]> ReadAsync(string characteristicId);
     }
 }

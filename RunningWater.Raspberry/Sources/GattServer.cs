@@ -20,19 +20,33 @@ namespace RunningWater.Raspberry.Sources
     /// <summary>
     /// 
     /// </summary>
-    public class ActionRequest
+    public static class GattExtensions
     {
         /// <summary>
-        /// 
+        /// "12345678-1234-5678-1234-56789abcdef1"
         /// </summary>
-        [JsonPropertyName("a")]
-        public string Action { get; set; }
+        /// <param name="builder"></param>
+        /// <returns></returns>
+        public static GattServiceBuilder WithCharacteristic(this GattServiceBuilder builder, string id, Func<Task<object>> read, Func<IDictionary<string, object>, Task> write)
+        {
+            builder.WithCharacteristic(new GattCharacteristicDescription
+            {
+                UUID = id,
+                Flags = new[] { "read", "write", "writable-auxiliaries" },
+                CharacteristicSource = new GenericCharacteristic(read, write),
+            },
+            new[]
+            {
+                new GattDescriptorDescription
+                {
+                    UUID = "12345678-1234-5678-1234-56789abcdef2",
+                    Flags = new[] { "read", "write" },
+                    Value = new[] { (byte)'t' },
+                }
+            });
 
-        /// <summary>
-        /// 
-        /// </summary>
-        [JsonPropertyName("v")]
-        public IDictionary<string, object> Values { get; set; }
+            return builder;
+        }
     }
 
     /// <summary>
@@ -70,7 +84,6 @@ namespace RunningWater.Raspberry.Sources
             "sudo bluetoothctl agent NoInputNoOutput".Bash();
 
 
-
             // BLE GATT server configuration
             Task.Run(async () =>
             {
@@ -78,11 +91,15 @@ namespace RunningWater.Raspberry.Sources
                 {
                     await context.Connect();
 
+                    const string serviceId = "12345678-1234-5678-1234-56789abcdef0";
+                    const string stateId = "12345678-1234-5678-1234-56789abcdef1";
+                    const string cronId = "12345678-1234-5678-1234-56789abcdef2";
+
                     await new AdvertisingManager(context).CreateAdvertisement(new AdvertisementProperties
                     {
                         Type = "peripheral",
-                        ServiceUUIDs = new[] { "12345678-1234-5678-1234-56789abcdef0" },
-                        LocalName = "Raspberry BLE",
+                        ServiceUUIDs = new[] { serviceId },
+                        LocalName = "Running water",
                     });
 
                     var builder = new GattApplicationBuilder();
@@ -90,56 +107,17 @@ namespace RunningWater.Raspberry.Sources
                     builder
                         .AddService(new GattServiceDescription
                         {
-                            UUID = "12345678-1234-5678-1234-56789abcdef0",
+                            UUID = serviceId,
                             Primary = true
                         })
-                        .WithCharacteristic(new GattCharacteristicDescription
-                        {
-                            UUID = "12345678-1234-5678-1234-56789abcdef1",
-                            Flags = new[] { "read", "write", "writable-auxiliaries" },
-                            CharacteristicSource = new GenericCharacteristic(
-                                async () =>
-                                {
-                                    "Read value".Console();
 
-                                    try
-                                    {
-                                        return await Task.FromResult(new byte[] { 123 });
-                                    }
-                                    catch (Exception exception)
-                                    {
-                                        exception.ToString().Console();
-                                        throw;
-                                    }
-                                },
-                                async value =>
-                                {
-                                    "Write value".Console();
+                        .WithCharacteristic(stateId,
+                            () => logic.ExecuteAsync(nameof(ILogicService.StateRead)),
+                            value => logic.ExecuteAsync(nameof(ILogicService.StateWrite), value))
 
-                                    try
-                                    {
-                                        var request = JsonSerializer.Deserialize<ActionRequest>(value);
-
-                                        $"Action -> {request.Action}".Console();
-
-                                        await logic.ExecuteAsync(request.Action, request.Values);
-                                    }
-                                    catch (Exception exception)
-                                    {
-                                        exception.ToString().Console();
-                                        throw;
-                                    }
-                                }),
-                        },
-                        new[]
-                        {
-                            new GattDescriptorDescription
-                            {
-                                UUID = "12345678-1234-5678-1234-56789abcdef2",
-                                Flags = new[] { "read", "write" },
-                                Value = new[] { (byte)'t' },
-                            }
-                        });
+                        .WithCharacteristic(cronId,
+                            () => logic.ExecuteAsync(nameof(ILogicService.CronRead)),
+                            value => logic.ExecuteAsync(nameof(ILogicService.CronWrite), value));
 
                     await new GattApplicationManager(context)
                         .RegisterGattApplication(builder.BuildServiceDescriptions());
@@ -157,24 +135,57 @@ namespace RunningWater.Raspberry.Sources
     /// </summary>
     public class GenericCharacteristic : ICharacteristicSource
     {
-        private Func<Task<byte[]>> read;
-        private Func<byte[], Task> write;
+        private Func<Task<object>> read;
+        private Func<IDictionary<string, object>, Task> write;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="read"></param>
         /// <param name="write"></param>
-        public GenericCharacteristic(Func<Task<byte[]>> read, Func<byte[], Task> write)
+        public GenericCharacteristic(Func<Task<object>> read, Func<IDictionary<string, object>, Task> write)
         {
             this.read = read;
             this.write = write;
         }
 
         /// <inheritdoc/>
-        public Task WriteValueAsync(byte[] value) => write(value);
+        public async Task WriteValueAsync(byte[] value)
+        {
+            try
+            {
+                "Write value".Console();
+
+                var request = JsonSerializer.Deserialize<IDictionary<string, object>>(value);
+
+                await write(request);
+
+                "Write finished".Console();
+            }
+            catch (Exception exception)
+            {
+                exception.ToString().Console();
+            }
+        }
 
         /// <inheritdoc/>
-        public Task<byte[]> ReadValueAsync() => read();
+        public async Task<byte[]> ReadValueAsync()
+        {
+            try
+            {
+                "Read value".Console();
+
+                var result = await read();
+
+                "Read finished".Console();
+
+                return JsonSerializer.SerializeToUtf8Bytes(result);
+            }
+            catch (Exception exception)
+            {
+                exception.ToString().Console();
+                return new byte[] { };
+            }
+        }
     }
 }

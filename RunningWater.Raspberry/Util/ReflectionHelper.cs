@@ -2,10 +2,8 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
-using RunningWater.Raspberry.Attributes;
 
 namespace RunningWater.Raspberry.Util
 {
@@ -21,11 +19,11 @@ namespace RunningWater.Raspberry.Util
         /// <param name="methodName"></param>
         /// <param name="values"></param>
         /// <returns></returns>
-        public static async Task ExecuteAsync(this object source, string methodName, IDictionary<string, object> values)
+        public static async Task<object> ExecuteAsync(this object source, string methodName, IDictionary<string, object> values = null)
         {
             try
             {
-                var targetMethod = source.GetType().GetMethods().SingleOrDefault(x => x.GetCustomAttribute<MethodNameAttribute>(true)?.Name == methodName);
+                var targetMethod = source.GetType().GetMethods().SingleOrDefault(method => method.Name == methodName);
 
                 if (targetMethod == null)
                     throw new NullReferenceException($"Method `{methodName}` not found");
@@ -34,7 +32,7 @@ namespace RunningWater.Raspberry.Util
                     .GetParameters()
                     .Select(parameter =>
                     {
-                        if (values.TryGetValue(parameter.Name, out object value) && value is JsonElement jsonElement)
+                        if (values is not null && values.TryGetValue(parameter.Name, out object value) && value is JsonElement jsonElement)
                         {
                             var parameterType = Nullable.GetUnderlyingType(parameter.ParameterType) ?? parameter.ParameterType;
                             return Convert(jsonElement, parameterType);
@@ -56,7 +54,7 @@ namespace RunningWater.Raspberry.Util
                     result = resultProperty.GetValue(task);
                 }
 
-                //return result;
+                return result;
             }
             catch (Exception exception)
             {

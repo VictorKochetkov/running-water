@@ -4,23 +4,73 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:viewmodels="clr-namespace:RunningWater.ViewModels"
     xmlns:pages="clr-namespace:RunningWater.Pages"
+    xmlns:xct="http://xamarin.com/schemas/2020/toolkit"
     x:Class="RunningWater.Pages.MainPage"
     x:DataType="viewmodels:MainViewModel">
 
+    <ScrollView
+        xct:SafeAreaEffect.SafeArea="True"
+        Padding="18,32,18,0">
 
-    <StackLayout
-        Padding="32"
-        HorizontalOptions="Center"
-        VerticalOptions="Center">
-        <ActivityIndicator
-            WidthRequest="24"
-            HeightRequest="24"
-            IsRunning="True"
-            IsEnabled="True"
-            Color="Black" />
-        <Label
-            Text="Connecting to device. Please, wait..." />
-    </StackLayout>
+        <StackLayout
+            Spacing="16">
 
+            <Grid
+                Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition
+                        Width="*" />
+                    <ColumnDefinition
+                        Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Label
+                    Text="Hello!"
+                    FontSize="28"
+                    FontAttributes="Bold" />
+
+                <ActivityIndicator
+                    Grid.Column="1"
+                    WidthRequest="16"
+                    HeightRequest="16"
+                    VerticalOptions="Center"
+                    IsRunning="{Binding IsBusy}"
+                    IsVisible="{Binding IsBusy}"
+                    IsEnabled="{Binding IsBusy}" />
+
+            </Grid>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition
+                        Width="*" />
+                    <ColumnDefinition
+                        Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Label
+                    Text="Watering state"
+                    VerticalOptions="Center" />
+
+                <Switch
+                    Grid.Column="1"
+                    VerticalOptions="Center"
+                    IsToggled="{Binding IsEnabled, Mode=TwoWay}" />
+
+            </Grid>
+
+            <BoxView
+                HeightRequest="1"
+                BackgroundColor="#11000000" />
+
+            <Editor
+                Text="{Binding Cron}"
+                Placeholder="Enter cron string" />
+
+
+
+        </StackLayout>
+
+    </ScrollView>
 
 </pages:BasePage>

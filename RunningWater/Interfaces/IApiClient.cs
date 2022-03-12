@@ -16,20 +16,27 @@ namespace RunningWater.Interfaces
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="enabled"></param>
         /// <returns></returns>
-        Task EnableAsync();
+        Task StateWriteAsync(bool enabled);
 
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
-        Task DisableAsync();
+        Task<bool> StateReadAsync();
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="cron"></param>
         /// <returns></returns>
-        Task SetCronAsync(string cron);
+        Task CronWriteAsync(string cron);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        Task<string> CronReadAsync();
     }
 }

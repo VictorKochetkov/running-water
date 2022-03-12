@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading;
 using RunningWater.Raspberry.Interfaces;
 using RunningWater.Raspberry.Util;
 
@@ -14,13 +15,14 @@ namespace RunningWater.Raspberry.Sources
     public class JsonFileStorage : IStorage
     {
         private static Dictionary<string, object> values = new Dictionary<string, object>();
+        private static readonly SemaphoreSlim locker = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// 
         /// </summary>
         public JsonFileStorage()
         {
-            lock (typeof(JsonFileStorage))
+            Locked(() =>
             {
                 if (!File.Exists(ConfigPath))
                 {
@@ -31,7 +33,7 @@ namespace RunningWater.Raspberry.Sources
                 {
                     values = JsonSerializer.Deserialize<Dictionary<string, object>>(file);
                 }
-            }
+            });
         }
 
         /// <summary>
@@ -67,14 +69,6 @@ namespace RunningWater.Raspberry.Sources
                 values[key] = value;
             }
 
-            WriteJson();
-        });
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private static void WriteJson() => Locked(() =>
-        {
             using (var file = File.OpenWrite(ConfigPath))
             {
                 JsonSerializer.Serialize(file, values);
@@ -105,9 +99,15 @@ namespace RunningWater.Raspberry.Sources
         /// <returns></returns>
         private static TValue Locked<TValue>(Func<TValue> action)
         {
-            lock (typeof(JsonFileStorage))
+            locker.Wait();
+
+            try
             {
                 return action();
+            }
+            finally
+            {
+                locker.Release();
             }
         }
     }

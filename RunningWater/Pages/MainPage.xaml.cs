@@ -1,5 +1,4 @@
 ﻿using RunningWater.ViewModels;
-using Xamarin.Forms;
 
 namespace RunningWater.Pages
 {

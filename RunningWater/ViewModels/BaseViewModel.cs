@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
+using RunningWater.Interfaces;
 
 namespace RunningWater.ViewModels
 {
@@ -25,8 +26,13 @@ namespace RunningWater.ViewModels
         /// <summary>
         /// 
         /// </summary>
+        protected readonly INavigationService Navigation;
+
+        /// <summary>
+        /// 
+        /// </summary>
         [Reactive]
-        public ViewModelState State { get; protected set; }
+        public ViewModelState State { get; protected set; } = ViewModelState.Default;
 
         /// <summary>
         /// 
@@ -36,8 +42,10 @@ namespace RunningWater.ViewModels
         /// <summary>
         /// 
         /// </summary>
-        public BaseViewModel()
+        public BaseViewModel(INavigationService navigationService)
         {
+            Navigation = navigationService;
+
             this.WhenAnyValue(viewModel => viewModel.State)
                 .Subscribe(value => OnPropertyChanged(nameof(IsBusy)));
         }

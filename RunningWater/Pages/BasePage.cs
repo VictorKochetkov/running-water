@@ -4,10 +4,14 @@ using Xamarin.Forms;
 
 namespace RunningWater.Pages
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public abstract class BasePage : ContentPage
     {
         public BasePage()
         {
+            NavigationPage.SetHasNavigationBar(this, false);
         }
 
         /// <inheritdoc/>

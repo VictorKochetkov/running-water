@@ -1,4 +1,5 @@
 ﻿using System;
+using NCrontab;
 using RunningWater.Raspberry.Attributes;
 using RunningWater.Raspberry.Interfaces;
 
@@ -33,12 +34,12 @@ namespace RunningWater.Raspberry.Sources
         /// 
         /// </summary>
         /// <param name="time"></param>
-        [MethodName("job/cron/set")]
-        public void SetCron(string cron)
+        [MethodName("cron/write")]
+        public void CronWrite(string cron)
         {
             Cron = cron;
 
-            if (GetState().IsEnabled)
+            if (StateRead())
             {
                 jobScheduler.AddOrUpdate<IWateringJob>(Cron);
             }
@@ -47,32 +48,52 @@ namespace RunningWater.Raspberry.Sources
         /// <summary>
         /// 
         /// </summary>
-        [MethodName("job/state/enable")]
-        public void Enable() => jobScheduler.AddOrUpdate<IWateringJob>(Cron);
+        /// <returns></returns>
+        [MethodName("cron/read")]
+        public string CronRead() => Cron;
 
         /// <summary>
         /// 
         /// </summary>
-        [MethodName("job/state/disable")]
-        public void Disable() => jobScheduler.RemoveIfExists<IWateringJob>();
-
-        /// <summary>
-        /// 
-        /// </summary>
-        [MethodName("job/state/get")]
-        public JobState GetState() => new JobState
+        [MethodName("state/write")]
+        public void StateWrite(bool enabled)
         {
-            IsEnabled = jobScheduler.IsJobExist<IWateringJob>(),
-            Cron = Cron,
-        };
+            if (enabled)
+                jobScheduler.AddOrUpdate<IWateringJob>(Cron);
+            else
+                jobScheduler.RemoveIfExists<IWateringJob>();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [MethodName("state/read")]
+        public bool StateRead() => jobScheduler.IsJobExist<IWateringJob>();
 
         /// <summary>
         /// 
         /// </summary>
         private string Cron
         {
-            get => storage.GetValue("cron", DEFAULT_CRON);
-            set => storage.SetValue("cron", value);
+            get => ValidateCron(storage.GetValue("cron", string.Empty));
+            set => storage.SetValue("cron", ValidateCron(value, throwOnError: true));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="cron"></param>
+        /// <param name="throwOnError"></param>
+        /// <returns></returns>
+        private string ValidateCron(string cron, bool throwOnError = false)
+        {
+            if (CrontabSchedule.TryParse(cron) != null)
+                return cron;
+
+            if (throwOnError)
+                throw new ArgumentException("Cron string is invalid");
+
+            return DEFAULT_CRON;
         }
     }
 }
