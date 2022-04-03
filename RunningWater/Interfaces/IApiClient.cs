@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace RunningWater.Interfaces
 {
@@ -29,14 +31,14 @@ namespace RunningWater.Interfaces
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="cron"></param>
+        /// <param name="jobs"></param>
         /// <returns></returns>
-        Task CronWriteAsync(string cron);
+        Task JobsWriteAsync(IEnumerable<DateTimeOffset> jobs);
 
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
-        Task<string> CronReadAsync();
+        Task<IEnumerable<DateTimeOffset>> JobsReadAsync();
     }
 }

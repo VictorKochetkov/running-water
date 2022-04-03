@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Hangfire;
 using Hangfire.Storage;
 using RunningWater.Raspberry.Interfaces;
@@ -8,25 +9,40 @@ namespace RunningWater.Raspberry.Sources
     /// <summary>
     /// 
     /// </summary>
-    public class HangfireJobScheduler : IJobScheduler
+    public class HangfireJobScheduler<TJob> : IJobScheduler<TJob> where TJob : IJob
     {
         /// <inheritdoc/>
-        public void AddOrUpdate<TJob>(string cron) where TJob : IJob
-            => RecurringJob.AddOrUpdate<TJob>(GetJobId<TJob>(), job => job.ExecuteAsync(), () => cron);
+        public string Add(DateTimeOffset enqueueAt)
+        {
+            return BackgroundJob.Schedule<TJob>(job => job.ExecuteAsync(), enqueueAt);
+        }
 
         /// <inheritdoc/>
-        public void RemoveIfExists<TJob>() where TJob : IJob
-            => RecurringJob.RemoveIfExists(GetJobId<TJob>());
+        public void Remove(DateTimeOffset enqueueAt)
+        {
+            if (IsJobExist(enqueueAt, out string jobId))
+                BackgroundJob.Delete(jobId);
+        }
 
         /// <inheritdoc/>
-        public bool IsJobExist<TJob>() where TJob : IJob
-            => JobStorage.Current.GetConnection().GetRecurringJobs().SingleOrDefault() is not null;
+        public void RemoveAll()
+        {
+            var jobs = JobStorage.Current.GetMonitoringApi()
+                .ScheduledJobs(0, int.MaxValue)
+                .Select(pair => pair.Key);
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <typeparam name="TJob"></typeparam>
-        /// <returns></returns>
-        private static string GetJobId<TJob>() => typeof(TJob).Name;
+            foreach (var jobId in jobs)
+                BackgroundJob.Delete(jobId);
+        }
+
+        /// <inheritdoc/>
+        public bool IsJobExist(DateTimeOffset enqueueAt, out string jobId)
+        {
+            jobId = JobStorage.Current.GetMonitoringApi()
+                .ScheduledJobs(0, int.MaxValue)
+                .SingleOrDefault(pair => pair.Value.EnqueueAt == enqueueAt).Key;
+
+            return !string.IsNullOrEmpty(jobId);
+        }
     }
 }

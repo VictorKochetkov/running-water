@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<ContentView
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:RunningWater.Controls"
+    xmlns:viewmodels="clr-namespace:RunningWater.ViewModels"
+    x:Class="RunningWater.Controls.CalendarView"
+    x:Name="this">
+
+    <StackLayout
+        BindableLayout.ItemsSource="{Binding Months, Source={x:Reference this}}">
+        <BindableLayout.ItemTemplate>
+            <DataTemplate
+                x:DataType="viewmodels:CalendarMonthItemViewModel">
+                <controls:CalendarMonthView
+                    BindingContext="{Binding .}" />
+            </DataTemplate>
+        </BindableLayout.ItemTemplate>
+    </StackLayout>
+
+</ContentView>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace RunningWater.Raspberry.Interfaces
 {
@@ -10,25 +11,25 @@ namespace RunningWater.Raspberry.Interfaces
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="cron"></param>
-        public void CronWrite(string cron);
+        /// <returns></returns>
+        IEnumerable<DateTimeOffset> JobsRead();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="jobs"></param>
+        void JobsWrite(IEnumerable<DateTimeOffset> jobs);
 
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
-        public string CronRead();
+        bool StateRead();
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="enabled"></param>
-        public void StateWrite(bool enabled);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public bool StateRead();
+        void StateWrite(bool enabled);
     }
 }

@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<StackLayout
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:RunningWater.Controls"
+    xmlns:xct="http://xamarin.com/schemas/2020/toolkit"
+    xmlns:yummy="clr-namespace:Xamarin.Forms.PancakeView;assembly=Xamarin.Forms.PancakeView"
+    xmlns:viewmodels="clr-namespace:RunningWater.ViewModels"
+    xmlns:converters="clr-namespace:RunningWater.Converters"
+    VerticalOptions="Start"
+    Spacing="0"
+    x:Class="RunningWater.Controls.CalendarMonthView"
+    x:DataType="viewmodels:CalendarMonthItemViewModel"
+    x:Name="this">
+
+    <Label
+        Margin="0,4,0,0"
+        Text="{Binding Date, StringFormat='{0:MMMM}'}"
+        TextColor="{DynamicResource secondary}"
+        FontSize="Small"
+        FontFamily="NunitoRegular" />
+
+    <Grid
+        Margin="0,-6,0,0"
+        ColumnSpacing="2"
+        RowSpacing="2"
+        RowDefinitions="{Binding DaysCollection, Converter={converters:CalendarViewRowDefinitionConverter}}"
+        BindableLayout.ItemsSource="{Binding DaysCollection}">
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition
+                Width="{Binding ColumnWidth, Source={x:Reference this}}" />
+            <ColumnDefinition
+                Width="{Binding ColumnWidth, Source={x:Reference this}}" />
+            <ColumnDefinition
+                Width="{Binding ColumnWidth, Source={x:Reference this}}" />
+            <ColumnDefinition
+                Width="{Binding ColumnWidth, Source={x:Reference this}}" />
+            <ColumnDefinition
+                Width="{Binding ColumnWidth, Source={x:Reference this}}" />
+            <ColumnDefinition
+                Width="{Binding ColumnWidth, Source={x:Reference this}}" />
+        </Grid.ColumnDefinitions>
+
+        <BindableLayout.ItemTemplate>
+
+            <DataTemplate
+                x:DataType="viewmodels:CalendarDayItemViewModel">
+
+                <ContentView
+                    Grid.Row="{Binding Row}"
+                    Grid.Column="{Binding Column}"
+                    xct:TouchEffect.NativeAnimation="True"
+                    xct:TouchEffect.IsAvailable="{Binding IsEnabled}"
+                    xct:TouchEffect.Command="{Binding DayTapCommand, Source={RelativeSource AncestorType={x:Type controls:CalendarView}}}"
+                    xct:TouchEffect.CommandParameter="{Binding .}">
+
+                    <yummy:PancakeView
+                        WidthRequest="{x:Static controls:CalendarMonthView.DefaultSize}"
+                        HeightRequest="{x:Static controls:CalendarMonthView.DefaultSize}"
+                        VerticalOptions="Center"
+                        HorizontalOptions="Start"
+                        BackgroundColor="Transparent"
+                        CornerRadius="18">
+
+                        <yummy:PancakeView.Triggers>
+                            <DataTrigger
+                                TargetType="yummy:PancakeView"
+                                Binding="{Binding IsSelected}"
+                                Value="True">
+                                <Setter
+                                    Property="BackgroundColor"
+                                    Value="{DynamicResource accent}" />
+                            </DataTrigger>
+                        </yummy:PancakeView.Triggers>
+
+                        <Label
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center"
+                            HorizontalTextAlignment="Center"
+                            Text="{Binding Day}"
+                            Padding="0,4"
+                            TextColor="{DynamicResource secondary}"
+                            FontSize="Body"
+                            FontFamily="NunitoMedium">
+                            <Label.Triggers>
+                                <DataTrigger
+                                    TargetType="Label"
+                                    Binding="{Binding IsEnabled}"
+                                    Value="True">
+                                    <Setter
+                                        Property="TextColor"
+                                        Value="{DynamicResource black}" />
+                                </DataTrigger>
+                                <DataTrigger
+                                    TargetType="Label"
+                                    Binding="{Binding IsSelected}"
+                                    Value="True">
+                                    <Setter
+                                        Property="TextColor"
+                                        Value="{DynamicResource white}" />
+                                </DataTrigger>
+                                <DataTrigger
+                                    TargetType="Label"
+                                    Binding="{Binding IsToday}"
+                                    Value="True">
+                                    <Setter
+                                        Property="FontFamily"
+                                        Value="NunitoBold" />
+                                    <Setter
+                                        Property="TextColor"
+                                        Value="{DynamicResource main}" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+
+                    </yummy:PancakeView>
+                </ContentView>
+
+            </DataTemplate>
+
+        </BindableLayout.ItemTemplate>
+    </Grid>
+
+</StackLayout>

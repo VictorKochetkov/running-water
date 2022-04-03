@@ -7,19 +7,20 @@ namespace RunningWater.ViewModels
     /// <summary>
     /// 
     /// </summary>
-    public class StartViewModel : BaseViewModel
+    public class StartViewModel : BasePageViewModel
     {
-        private readonly IApiClient apiClient;
+        private readonly IApiClient _apiClient;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="navigationService"></param>
+        /// <param name="dialogService"></param>
         /// <param name="apiClient"></param>
-        public StartViewModel(INavigationService navigationService, IApiClient apiClient)
-            : base(navigationService)
+        public StartViewModel(INavigationService navigationService, IDialogService dialogService, IApiClient apiClient)
+            : base(navigationService, dialogService)
         {
-            this.apiClient = apiClient;
+            _apiClient = apiClient;
         }
 
         /// <inheritdoc/>
@@ -27,17 +28,12 @@ namespace RunningWater.ViewModels
         {
             await base.OnAppearing();
 
-            await DoTask(
-                async () =>
-                {
-                    await apiClient.TryConnectAsync();
-                    await Navigation.NavigateAsync<MainPage>();
-                },
-                minorLoading: true);
-
-            //await apiClient.SetCronAsync("*/2 * * * *");
-            //await apiClient.EnableAsync();
-            //await apiClient.SetCronAsync("*/1 * * * *");
+            await DoTask(async () =>
+            {
+                await Navigation.NavigateAsync<MainPage>(
+                    await _apiClient.StateReadAsync(),
+                    await _apiClient.JobsReadAsync());
+            });
         }
     }
 }

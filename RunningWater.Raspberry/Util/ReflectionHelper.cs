@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using RunningWater.Raspberry.Converters;
 
 namespace RunningWater.Raspberry.Util
 {
@@ -19,7 +20,7 @@ namespace RunningWater.Raspberry.Util
         /// <param name="methodName"></param>
         /// <param name="values"></param>
         /// <returns></returns>
-        public static async Task<object> ExecuteAsync(this object source, string methodName, IDictionary<string, object> values = null)
+        public static object Execute(this object source, string methodName, IDictionary<string, object> values = null)
         {
             try
             {
@@ -49,9 +50,7 @@ namespace RunningWater.Raspberry.Util
                 // Это task? -> ждем завершения
                 if (result is Task task)
                 {
-                    await task.ConfigureAwait(false);
-                    var resultProperty = task.GetType().GetProperty("Result");
-                    result = resultProperty.GetValue(task);
+                    throw new Exception();
                 }
 
                 return result;
@@ -85,7 +84,10 @@ namespace RunningWater.Raspberry.Util
             using (var writer = new Utf8JsonWriter(bufferWriter))
                 value?.WriteTo(writer);
 
-            return JsonSerializer.Deserialize(bufferWriter.WrittenSpan, targetType);
+            var jsonOptions = new JsonSerializerOptions();
+            jsonOptions.Converters.Add(new DateTimeUnixTimeConverter());
+
+            return JsonSerializer.Deserialize(bufferWriter.WrittenSpan, targetType, jsonOptions);
         }
     }
 }

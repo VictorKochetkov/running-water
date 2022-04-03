@@ -8,29 +8,30 @@ namespace RunningWater.Interfaces
     public interface IBluetooth
     {
         /// <summary>
-        /// 
+        /// Is target bluetooth device connected.
         /// </summary>
         bool IsConnected { get; }
 
         /// <summary>
-        /// 
+        /// Try to connect to target device.
+        /// If device wasn't connected earlier - searching will be performed.
         /// </summary>
         /// <returns></returns>
         Task TryConnectAsync();
 
         /// <summary>
-        /// 
+        /// Write bytes array to GATT characterictic.
         /// </summary>
-        /// <param name="characteristicId"></param>
-        /// <param name="data"></param>
-        /// <returns></returns>
+        /// <param name="characteristicId">Characteristic id.</param>
+        /// <param name="data">Bytes array to be written.</param>
+        /// <returns>Awaitable task.</returns>
         Task WriteAsync(string characteristicId, byte[] data);
 
         /// <summary>
-        /// 
+        /// Read bytes array from GATT characterictic.
         /// </summary>
-        /// <param name="characteristicId"></param>
-        /// <returns></returns>
+        /// <param name="characteristicId">Characteristic id.</param>
+        /// <returns>Awaitable task.</returns>
         Task<byte[]> ReadAsync(string characteristicId);
     }
 }

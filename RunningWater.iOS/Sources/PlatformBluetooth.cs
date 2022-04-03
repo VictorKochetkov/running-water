@@ -3,9 +3,7 @@ using System.Threading.Tasks;
 using CoreBluetooth;
 using CoreFoundation;
 using RunningWater.Sources;
-using Shiny.BluetoothLE;
 using Xamarin.Essentials;
-using Xamarin.Forms;
 
 namespace RunningWater.iOS.Sources
 {
@@ -32,8 +30,8 @@ namespace RunningWater.iOS.Sources
         /// 
         /// </summary>
         /// <param name="adapter"></param>
-        public PlatformBluetooth(IBleManager adapter)
-            : base(adapter)
+        public PlatformBluetooth()
+            : base()
         {
         }
 

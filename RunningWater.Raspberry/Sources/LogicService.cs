@@ -1,5 +1,7 @@
 ﻿using System;
-using NCrontab;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using RunningWater.Raspberry.Attributes;
 using RunningWater.Raspberry.Interfaces;
 
@@ -11,89 +13,85 @@ namespace RunningWater.Raspberry.Sources
     public class LogicService : ILogicService
     {
         private readonly IStorage storage;
-        private readonly IJobScheduler jobScheduler;
-
-#if DEBUG
-        private const string DEFAULT_CRON = "*/1 * * * *"; // every 1 minute
-#else
-        private const string DEFAULT_CRON = "0 12 * * *"; // at 12:00
-#endif
+        private readonly IJobScheduler<IWateringJob> jobScheduler;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="storage"></param>
         /// <param name="jobScheduler"></param>
-        public LogicService(IStorage storage, IJobScheduler jobScheduler)
+        public LogicService(IStorage storage, IJobScheduler<IWateringJob> jobScheduler)
         {
             this.storage = storage;
             this.jobScheduler = jobScheduler;
+
+            UpdateJobs(Jobs);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="time"></param>
-        [MethodName("cron/write")]
-        public void CronWrite(string cron)
+        /// <inheritdoc/>
+        [MethodName("job/write")]
+        public void JobsWrite(IEnumerable<DateTimeOffset> jobs)
         {
-            Cron = cron;
-
-            if (StateRead())
-            {
-                jobScheduler.AddOrUpdate<IWateringJob>(Cron);
-            }
+            Jobs = jobs;
+            UpdateJobs(Jobs);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        [MethodName("cron/read")]
-        public string CronRead() => Cron;
-
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <inheritdoc/>
         [MethodName("state/write")]
         public void StateWrite(bool enabled)
         {
-            if (enabled)
-                jobScheduler.AddOrUpdate<IWateringJob>(Cron);
-            else
-                jobScheduler.RemoveIfExists<IWateringJob>();
+            IsEnabled = enabled;
+            UpdateJobs(Jobs);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <inheritdoc/>
+        [MethodName("job/read")]
+        public IEnumerable<DateTimeOffset> JobsRead()
+        {
+            return Jobs;
+        }
+
+        /// <inheritdoc/>
         [MethodName("state/read")]
-        public bool StateRead() => jobScheduler.IsJobExist<IWateringJob>();
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private string Cron
+        public bool StateRead()
         {
-            get => ValidateCron(storage.GetValue("cron", string.Empty));
-            set => storage.SetValue("cron", ValidateCron(value, throwOnError: true));
+            return IsEnabled;
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="cron"></param>
-        /// <param name="throwOnError"></param>
-        /// <returns></returns>
-        private string ValidateCron(string cron, bool throwOnError = false)
+        private void UpdateJobs(IEnumerable<DateTimeOffset> jobs)
         {
-            if (CrontabSchedule.TryParse(cron) != null)
-                return cron;
+            Task.Run(() =>
+            {
+                lock (typeof(ILogicService))
+                {
+                    jobScheduler.RemoveAll();
 
-            if (throwOnError)
-                throw new ArgumentException("Cron string is invalid");
+                    if (IsEnabled)
+                        foreach (var schedule in jobs)
+                            jobScheduler.Add(schedule);
+                }
+            });
+        }
 
-            return DEFAULT_CRON;
+        /// <summary>
+        /// 
+        /// </summary>
+        private IEnumerable<DateTimeOffset> Jobs
+        {
+            get => storage.GetValue("jobs", Enumerable.Empty<DateTimeOffset>());
+            set => storage.SetValue("jobs", value);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private bool IsEnabled
+        {
+            get => storage.GetValue("enabled", false);
+            set => storage.SetValue("enabled", value);
         }
     }
 }

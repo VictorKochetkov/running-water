@@ -4,30 +4,14 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
-using RunningWater.Interfaces;
 
 namespace RunningWater.ViewModels
 {
     /// <summary>
     /// 
     /// </summary>
-    public enum ViewModelState
-    {
-        Default,
-        MinorLoading,
-        Loading,
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
     public class BaseViewModel : ReactiveObject
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        protected readonly INavigationService Navigation;
-
         /// <summary>
         /// 
         /// </summary>
@@ -42,10 +26,8 @@ namespace RunningWater.ViewModels
         /// <summary>
         /// 
         /// </summary>
-        public BaseViewModel(INavigationService navigationService)
+        public BaseViewModel()
         {
-            Navigation = navigationService;
-
             this.WhenAnyValue(viewModel => viewModel.State)
                 .Subscribe(value => OnPropertyChanged(nameof(IsBusy)));
         }
@@ -56,24 +38,6 @@ namespace RunningWater.ViewModels
         /// <param name="propertyName"></param>
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
             => this.RaisePropertyChanged(propertyName);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public virtual Task OnAppearing()
-        {
-            return Task.FromResult(true);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public virtual Task OnDisappearing()
-        {
-            return Task.FromResult(true);
-        }
 
         /// <summary>
         /// 

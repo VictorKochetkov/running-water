@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
+using System.IO;
+using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -11,7 +9,7 @@ using DotnetBleServer.Advertisements;
 using DotnetBleServer.Core;
 using DotnetBleServer.Gatt;
 using DotnetBleServer.Gatt.Description;
-using RunningWater.Raspberry.Attributes;
+using RunningWater.Raspberry.Converters;
 using RunningWater.Raspberry.Interfaces;
 using RunningWater.Raspberry.Util;
 
@@ -27,12 +25,12 @@ namespace RunningWater.Raspberry.Sources
         /// </summary>
         /// <param name="builder"></param>
         /// <returns></returns>
-        public static GattServiceBuilder WithCharacteristic(this GattServiceBuilder builder, string id, Func<Task<object>> read, Func<IDictionary<string, object>, Task> write)
+        public static GattServiceBuilder WithCharacteristic(this GattServiceBuilder builder, string id, Func<object> read, Action<IDictionary<string, object>> write)
         {
             builder.WithCharacteristic(new GattCharacteristicDescription
             {
                 UUID = id,
-                Flags = new[] { "read", "write", "writable-auxiliaries" },
+                Flags = new string[] { "read", "write", "writable-auxiliaries" },
                 CharacteristicSource = new GenericCharacteristic(read, write),
             },
             new[]
@@ -66,7 +64,7 @@ namespace RunningWater.Raspberry.Sources
         /// <summary>
         /// 
         /// </summary>
-        public Task ExecuteAsync()
+        public async Task ExecuteAsync()
         {
             // Disable bluetooth discovery timeout
             "sudo sed -i 's/^#DiscoverableTimeout = .*/DiscoverableTimeout = 0/' /etc/bluetooth/main.conf".Bash();
@@ -85,48 +83,41 @@ namespace RunningWater.Raspberry.Sources
 
 
             // BLE GATT server configuration
-            Task.Run(async () =>
+
+            var context = new ServerContext();
+
+            await context.Connect();
+
+            const string serviceId = "12345678-1234-5678-1234-56789abcdef0";
+            const string stateId = "12345678-1234-5678-1234-56789abcdef1";
+            const string jobId = "12345678-1234-5678-1234-56789abcdef2";
+
+            await new AdvertisingManager(context).CreateAdvertisement(new AdvertisementProperties
             {
-                using (var context = new ServerContext())
-                {
-                    await context.Connect();
-
-                    const string serviceId = "12345678-1234-5678-1234-56789abcdef0";
-                    const string stateId = "12345678-1234-5678-1234-56789abcdef1";
-                    const string cronId = "12345678-1234-5678-1234-56789abcdef2";
-
-                    await new AdvertisingManager(context).CreateAdvertisement(new AdvertisementProperties
-                    {
-                        Type = "peripheral",
-                        ServiceUUIDs = new[] { serviceId },
-                        LocalName = "Running water",
-                    });
-
-                    var builder = new GattApplicationBuilder();
-
-                    builder
-                        .AddService(new GattServiceDescription
-                        {
-                            UUID = serviceId,
-                            Primary = true
-                        })
-
-                        .WithCharacteristic(stateId,
-                            () => logic.ExecuteAsync(nameof(ILogicService.StateRead)),
-                            value => logic.ExecuteAsync(nameof(ILogicService.StateWrite), value))
-
-                        .WithCharacteristic(cronId,
-                            () => logic.ExecuteAsync(nameof(ILogicService.CronRead)),
-                            value => logic.ExecuteAsync(nameof(ILogicService.CronWrite), value));
-
-                    await new GattApplicationManager(context)
-                        .RegisterGattApplication(builder.BuildServiceDescriptions());
-
-                    await TaskHelper.WaitInfinite();
-                }
+                Type = "peripheral",
+                ServiceUUIDs = new[] { serviceId },
+                LocalName = "Running water",
             });
 
-            return Task.FromResult(true);
+            var builder = new GattApplicationBuilder();
+
+            builder
+                .AddService(new GattServiceDescription
+                {
+                    UUID = serviceId,
+                    Primary = true
+                })
+
+                .WithCharacteristic(stateId,
+                    () => logic.Execute(nameof(ILogicService.StateRead)),
+                    value => logic.Execute(nameof(ILogicService.StateWrite), value))
+
+                .WithCharacteristic(jobId,
+                    () => logic.Execute(nameof(ILogicService.JobsRead)),
+                    value => logic.Execute(nameof(ILogicService.JobsWrite), value));
+
+            await new GattApplicationManager(context)
+                .RegisterGattApplication(builder.BuildServiceDescriptions());
         }
     }
 
@@ -135,30 +126,38 @@ namespace RunningWater.Raspberry.Sources
     /// </summary>
     public class GenericCharacteristic : ICharacteristicSource
     {
-        private Func<Task<object>> read;
-        private Func<IDictionary<string, object>, Task> write;
+        private static readonly JsonSerializerOptions jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = false,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        };
+
+        private Func<object> read;
+        private Action<IDictionary<string, object>> write;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="read"></param>
         /// <param name="write"></param>
-        public GenericCharacteristic(Func<Task<object>> read, Func<IDictionary<string, object>, Task> write)
+        public GenericCharacteristic(Func<object> read, Action<IDictionary<string, object>> write)
         {
             this.read = read;
             this.write = write;
+
+            jsonOptions.Converters.Add(new DateTimeUnixTimeConverter());
         }
 
         /// <inheritdoc/>
-        public async Task WriteValueAsync(byte[] value)
+        public Task WriteValueAsync(byte[] value)
         {
             try
             {
-                "Write value".Console();
+                $"Write value -> {value.Length} bytes".Console();
 
-                var request = JsonSerializer.Deserialize<IDictionary<string, object>>(value);
+                var request = JsonSerializer.Deserialize<IDictionary<string, object>>(Decompress(value), jsonOptions);
 
-                await write(request);
+                write(request);
 
                 "Write finished".Console();
             }
@@ -166,25 +165,65 @@ namespace RunningWater.Raspberry.Sources
             {
                 exception.ToString().Console();
             }
+
+            return Task.FromResult(true);
         }
 
         /// <inheritdoc/>
-        public async Task<byte[]> ReadValueAsync()
+        public Task<byte[]> ReadValueAsync()
         {
             try
             {
                 "Read value".Console();
 
-                var result = await read();
+                var value = Compress(JsonSerializer.SerializeToUtf8Bytes(read(), options: jsonOptions));
 
-                "Read finished".Console();
+                $"Read finished -> {value.Length} bytes".Console();
 
-                return JsonSerializer.SerializeToUtf8Bytes(result);
+                return Task.FromResult(value);
             }
             catch (Exception exception)
             {
                 exception.ToString().Console();
-                return new byte[] { };
+                return Task.FromResult(new byte[] { });
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        private static byte[] Compress(byte[] bytes)
+        {
+            using (var input = new MemoryStream(bytes))
+            using (var output = new MemoryStream())
+            {
+                using (var compressor = new BrotliStream(output, CompressionLevel.Optimal))
+                {
+                    input.CopyTo(compressor);
+                }
+
+                return output.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        private static byte[] Decompress(byte[] bytes)
+        {
+            using (var input = new MemoryStream(bytes))
+            using (var output = new MemoryStream())
+            {
+                using (var decompressor = new BrotliStream(input, CompressionMode.Decompress))
+                {
+                    decompressor.CopyTo(output);
+                }
+
+                return output.ToArray();
             }
         }
     }

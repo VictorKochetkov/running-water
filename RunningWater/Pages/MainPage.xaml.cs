@@ -1,4 +1,6 @@
-﻿using RunningWater.ViewModels;
+﻿using System.Windows.Input;
+using RunningWater.ViewModels;
+using Xamarin.Forms;
 
 namespace RunningWater.Pages
 {
@@ -8,7 +10,7 @@ namespace RunningWater.Pages
         {
             InitializeComponent();
 
-            BindingContext = Startup.GetViewModel<MainViewModel>();
+            BindingContext = App.GetViewModel<MainViewModel>();
         }
     }
 }

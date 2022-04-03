@@ -1,28 +1,37 @@
-﻿namespace RunningWater.Raspberry.Interfaces
+﻿using System;
+
+namespace RunningWater.Raspberry.Interfaces
 {
     /// <summary>
     /// 
     /// </summary>
-    public interface IJobScheduler
+    /// <typeparam name="TJob"></typeparam>
+    public interface IJobScheduler<TJob> where TJob : IJob
     {
         /// <summary>
         /// 
         /// </summary>
-        /// <typeparam name="TJob"></typeparam>
-        /// <param name="cron"></param>
-        void AddOrUpdate<TJob>(string cron) where TJob : IJob;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <typeparam name="TJob"></typeparam>
-        void RemoveIfExists<TJob>() where TJob : IJob;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <typeparam name="TJob"></typeparam>
+        /// <param name="enqueueAt"></param>
         /// <returns></returns>
-        bool IsJobExist<TJob>() where TJob : IJob;
+        string Add(DateTimeOffset enqueueAt);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="enqueueAt"></param>
+        void Remove(DateTimeOffset enqueueAt);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        void RemoveAll();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="enqueueAt"></param>
+        /// <param name="jobId"></param>
+        /// <returns></returns>
+        bool IsJobExist(DateTimeOffset enqueueAt, out string jobId);
     }
 }

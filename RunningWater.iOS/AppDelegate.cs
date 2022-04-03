@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using RunningWater.Interfaces;
 using RunningWater.iOS.Sources;
-using Shiny;
 using UIKit;
 
 namespace RunningWater.iOS
@@ -22,11 +21,11 @@ namespace RunningWater.iOS
         //
         public override bool FinishedLaunching(UIApplication app, NSDictionary options)
         {
+            Rg.Plugins.Popup.Popup.Init();
+
             global::Xamarin.Forms.Forms.Init();
 
-            this.ShinyFinishedLaunching(new Startup(services => services.AddSingleton<IBluetooth, PlatformBluetooth>()));
-
-            LoadApplication(new App());
+            LoadApplication(new App(services => services.AddSingleton<IBluetooth, PlatformBluetooth>()));
 
             return base.FinishedLaunching(app, options);
         }

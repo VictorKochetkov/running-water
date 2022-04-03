@@ -1,12 +1,9 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using RunningWater.Interfaces;
 using RunningWater.Pages;
 using RunningWater.Sources;
 using RunningWater.ViewModels;
-using Shiny;
-using Shiny.BluetoothLE;
 using Xamarin.Forms;
 
 namespace RunningWater
@@ -14,41 +11,36 @@ namespace RunningWater
     /// <summary>
     /// 
     /// </summary>
-    public class Startup : ShinyStartup
+    public partial class App : Application
     {
-        private readonly Action<IServiceCollection> addPlatformServices;
+        private static IServiceProvider provider;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="addPlatformServices"></param>
-        public Startup(Action<IServiceCollection> addPlatformServices = null)
-            => this.addPlatformServices = addPlatformServices;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="services"></param>
-        /// <param name="platform"></param>
-        public override void ConfigureServices(IServiceCollection services, IPlatform platform)
+        public App(Action<IServiceCollection> addPlatformServices = null)
         {
+            InitializeComponent();
+
+            var services = new ServiceCollection();
+
             // Add platform specific services
             addPlatformServices?.Invoke(services);
-
-            // Bluetooth
-            services.UseBleClient(new BleConfiguration
-            {
-                iOSShowPowerAlert = true,
-                AndroidShouldInvokeOnMainThread = true,
-            });
 
             // Add core services
             services.AddSingleton<IApiClient, BluetoothApiClient>();
             services.AddSingleton<INavigationService, NavigationService>();
+            services.AddSingleton<IDialogService, DialogService>();
+            services.AddSingleton<IRetryHandlerService, RetryHandlerService>();
 
             // Add view models
             services.AddTransient<StartViewModel>();
             services.AddTransient<MainViewModel>();
+
+            provider = services.BuildServiceProvider();
+
+            MainPage = new NavigationPage(new StartPage());
         }
 
         /// <summary>
@@ -56,23 +48,8 @@ namespace RunningWater
         /// </summary>
         /// <typeparam name="TViewModel"></typeparam>
         /// <returns></returns>
-        public static BaseViewModel GetViewModel<TViewModel>() where TViewModel : BaseViewModel
-            => ShinyHost.Resolve<TViewModel>();
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public partial class App : Application
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        public App()
-        {
-            InitializeComponent();
-            MainPage = new NavigationPage(new StartPage());
-        }
+        public static BasePageViewModel GetViewModel<TViewModel>() where TViewModel : BasePageViewModel
+            => provider.GetRequiredService<TViewModel>();
 
         /// <summary>
         /// 

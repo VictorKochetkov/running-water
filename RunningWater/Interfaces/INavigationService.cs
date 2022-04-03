@@ -14,6 +14,6 @@ namespace RunningWater.Interfaces
         /// </summary>
         /// <typeparam name="TPage"></typeparam>
         /// <returns></returns>
-        Task NavigateAsync<TPage>() where TPage : BasePage, new();
+        Task NavigateAsync<TPage>(params object[] arguments) where TPage : BasePage, new();
     }
 }

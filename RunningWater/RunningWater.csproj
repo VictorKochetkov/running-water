@@ -22,7 +22,9 @@
     <PackageReference Include="Xamarin.CommunityToolkit" Version="2.0.0" />
     <PackageReference Include="System.Text.Json" Version="6.0.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
-    <PackageReference Include="Shiny.BluetoothLE" Version="2.4.3.3003" />
+    <PackageReference Include="Xamarin.Forms.PancakeView" Version="2.3.0.759" />
+    <PackageReference Include="Rg.Plugins.Popup" Version="2.1.0" />
+    <PackageReference Include="Plugin.BLE" Version="2.2.0-pre2" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Plugin.BLE" />
@@ -37,11 +39,32 @@
     <None Remove="Plugin.BluetoothLE" />
     <None Remove="Shiny.BluetoothLE" />
     <None Remove="Pages\" />
+    <None Remove="ncrontab" />
+    <None Remove="Resources\" />
+    <None Remove="Resources\Fonts\" />
+    <None Remove="Resources\Fonts\Nunito-Regular.ttf" />
+    <None Remove="Resources\Fonts\Nunito-Medium.ttf" />
+    <None Remove="Resources\Fonts\Nunito-Bold.ttf" />
+    <None Remove="Controls\" />
+    <None Remove="Xamarin.Forms.PancakeView" />
+    <None Remove="Rg.Plugins.Popup" />
+    <None Remove="Converters\" />
+    <None Remove="Helpers\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="ViewModels\" />
     <Folder Include="Sources\" />
     <Folder Include="Interfaces\" />
     <Folder Include="Pages\" />
+    <Folder Include="Resources\" />
+    <Folder Include="Resources\Fonts\" />
+    <Folder Include="Controls\" />
+    <Folder Include="Converters\" />
+    <Folder Include="Helpers\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Fonts\Nunito-Regular.ttf" />
+    <EmbeddedResource Include="Resources\Fonts\Nunito-Medium.ttf" />
+    <EmbeddedResource Include="Resources\Fonts\Nunito-Bold.ttf" />
   </ItemGroup>
 </Project>

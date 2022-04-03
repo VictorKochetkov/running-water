@@ -14,7 +14,7 @@ namespace RunningWater.Raspberry.Sources
     /// </summary>
     public class JsonFileStorage : IStorage
     {
-        private static Dictionary<string, object> values = new Dictionary<string, object>();
+        private static IDictionary<string, object> values = new Dictionary<string, object>();
         private static readonly SemaphoreSlim locker = new SemaphoreSlim(1, 1);
 
         /// <summary>
@@ -25,13 +25,11 @@ namespace RunningWater.Raspberry.Sources
             Locked(() =>
             {
                 if (!File.Exists(ConfigPath))
-                {
                     return;
-                }
 
                 using (var file = File.OpenRead(ConfigPath))
                 {
-                    values = JsonSerializer.Deserialize<Dictionary<string, object>>(file);
+                    values = JsonSerializer.Deserialize<IDictionary<string, object>>(file);
                 }
             });
         }
@@ -65,20 +63,24 @@ namespace RunningWater.Raspberry.Sources
         public void SetValue(string key, object value) => Locked(() =>
         {
             if (!values.TryAdd(key, value))
-            {
                 values[key] = value;
-            }
+
+            if (File.Exists(ConfigPath))
+                File.Delete(ConfigPath);
 
             using (var file = File.OpenWrite(ConfigPath))
             {
-                JsonSerializer.Serialize(file, values);
+                JsonSerializer.Serialize(file, values, new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                });
             }
         });
 
         /// <summary>
         /// 
         /// </summary>
-        private static string ConfigPath => Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) ?? string.Empty, "config.json");
+        private static string ConfigPath => "/home/pi/config.json";
 
         /// <summary>
         /// 

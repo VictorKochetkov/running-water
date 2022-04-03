@@ -18,14 +18,14 @@ namespace RunningWater.Pages
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            (BindingContext as BaseViewModel)?.OnAppearing();
+            (BindingContext as BasePageViewModel)?.OnAppearing();
         }
 
         /// <inheritdoc/>
         protected override void OnDisappearing()
         {
             base.OnDisappearing();
-            (BindingContext as BaseViewModel)?.OnDisappearing();
+            (BindingContext as BasePageViewModel)?.OnDisappearing();
         }
     }
 }

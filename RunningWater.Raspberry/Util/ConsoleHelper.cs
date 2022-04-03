@@ -12,6 +12,6 @@ namespace RunningWater.Raspberry.Util
         /// </summary>
         /// <param name="message"></param>
         public static void Console(this string message)
-            => System.Console.WriteLine($"[{DateTime.Now}] {message}");
+            => System.Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss:ffff")}] {message}");
     }
 }

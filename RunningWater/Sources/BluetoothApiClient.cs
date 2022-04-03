@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using RunningWater.Converters;
 using RunningWater.Interfaces;
 
 namespace RunningWater.Sources
@@ -65,10 +66,12 @@ namespace RunningWater.Sources
             /// 
             /// </summary>
             [GattCharacteristic("12345678-1234-5678-1234-56789abcdef2")]
-            Cron,
+            Jobs,
         }
 
         private readonly IBluetooth bluetooth;
+        private readonly IRetryHandlerService retryHandler;
+
         private static readonly JsonSerializerOptions jsonOptions = new JsonSerializerOptions
         {
             WriteIndented = false,
@@ -78,13 +81,19 @@ namespace RunningWater.Sources
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="write"></param>
-        public BluetoothApiClient(IBluetooth bluetooth)
-            => this.bluetooth = bluetooth;
+        /// <param name="bluetooth"></param>
+        /// <param name="retryHandler"></param>
+        public BluetoothApiClient(IBluetooth bluetooth, IRetryHandlerService retryHandler)
+        {
+            this.bluetooth = bluetooth;
+            this.retryHandler = retryHandler;
+
+            jsonOptions.Converters.Add(new DateTimeUnixTimeConverter());
+        }
 
         /// <inheritdoc/>
         public Task TryConnectAsync()
-            => bluetooth.TryConnectAsync();
+            => retryHandler.ExecuteAsync(() => bluetooth.TryConnectAsync());
 
         /// <inheritdoc/>
         public Task StateWriteAsync(bool enabled)
@@ -95,12 +104,12 @@ namespace RunningWater.Sources
             => ReadAsync<bool>(Property.State);
 
         /// <inheritdoc/>
-        public Task CronWriteAsync(string cron)
-            => WriteAsync(Property.Cron, new { cron });
+        public Task JobsWriteAsync(IEnumerable<DateTimeOffset> jobs)
+            => WriteAsync(Property.Jobs, new { jobs });
 
         /// <inheritdoc/>
-        public Task<string> CronReadAsync()
-            => ReadAsync<string>(Property.Cron);
+        public Task<IEnumerable<DateTimeOffset>> JobsReadAsync()
+            => ReadAsync<IEnumerable<DateTimeOffset>>(Property.Jobs);
 
         /// <summary>
         /// 
@@ -108,24 +117,24 @@ namespace RunningWater.Sources
         /// <param name="property"></param>
         /// <param name="values"></param>
         /// <returns></returns>
-        private async Task WriteAsync(Property property, object values = null)
-        {
-            await bluetooth.TryConnectAsync();
-
-            await bluetooth.WriteAsync(property.GetAttribute<GattCharacteristicAttribute>().Id, SerializePayload(values));
-        }
+        private Task WriteAsync(Property property, object values = null)
+            => retryHandler.ExecuteAsync(async () =>
+            {
+                await bluetooth.TryConnectAsync();
+                await bluetooth.WriteAsync(property.GetAttribute<GattCharacteristicAttribute>().Id, SerializePayload(values));
+            });
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="property"></param>
         /// <returns></returns>
-        private async Task<TValue> ReadAsync<TValue>(Property property)
-        {
-            await bluetooth.TryConnectAsync();
-
-            return DeserializePayload<TValue>(await bluetooth.ReadAsync(property.GetAttribute<GattCharacteristicAttribute>().Id));
-        }
+        private Task<TValue> ReadAsync<TValue>(Property property)
+            => retryHandler.ExecuteAsync(async () =>
+            {
+                await bluetooth.TryConnectAsync();
+                return DeserializePayload<TValue>(await bluetooth.ReadAsync(property.GetAttribute<GattCharacteristicAttribute>().Id));
+            });
 
         /// <summary>
         /// 
@@ -140,6 +149,6 @@ namespace RunningWater.Sources
         /// <typeparam name="TValue"></typeparam>
         /// <param name="bytes"></param>
         /// <returns></returns>
-        private static TValue DeserializePayload<TValue>(byte[] bytes) => JsonSerializer.Deserialize<TValue>(Encoding.UTF8.GetString(bytes));
+        private static TValue DeserializePayload<TValue>(byte[] bytes) => JsonSerializer.Deserialize<TValue>(Encoding.UTF8.GetString(bytes), jsonOptions);
     }
 }

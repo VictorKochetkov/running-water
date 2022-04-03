@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
 <pages:BasePage
     xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:t="clr-namespace:RunningWater.Helpers"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:pages="clr-namespace:RunningWater.Pages"
     x:Class="RunningWater.Pages.StartPage">
@@ -10,17 +11,21 @@
         HorizontalOptions="Center"
         VerticalOptions="Center"
         Spacing="12">
+
         <ActivityIndicator
             WidthRequest="24"
             HeightRequest="24"
             IsRunning="True"
             IsEnabled="True"
-            Color="Black" />
+            Color="{DynamicResource secondary}" />
+
         <Label
             HorizontalOptions="Center"
             HorizontalTextAlignment="Center"
-            TextColor="LightGray"
-            Text="Connecting to device. Please, wait..." />
+            TextColor="{DynamicResource primary}"
+            FontFamily="NunitoRegular"
+            Text="{t:Translate 'StartPage.Body.Text'}" />
+
     </StackLayout>
 
 </pages:BasePage>

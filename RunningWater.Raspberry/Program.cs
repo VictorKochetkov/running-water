@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Hangfire;
-using Hangfire.LiteDB;
+using Hangfire.Dashboard;
+using Hangfire.MemoryStorage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -39,7 +41,7 @@ namespace RunningWater.Raspberry
     public static class Extensions
     {
         /// <summary>
-        /// Bluetooth GATT server
+        /// Start BLE GATT server
         /// </summary>
         /// <param name="services"></param>
         /// <returns></returns>
@@ -49,23 +51,78 @@ namespace RunningWater.Raspberry
             {
                 _ = services.BuildServiceProvider().GetRequiredService<IGattServer>().ExecuteAsync();
             }
+
+            return services;
+        }
+
+        /// <summary>
+        /// Disable USB controllers on service startup.
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        public static IServiceCollection DisableUsb(this IServiceCollection services)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                services.BuildServiceProvider().GetRequiredService<IUsbController>().DisableUsb();
+            }
+
+            return services;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        public static IServiceCollection EnablePowerSave(this IServiceCollection services)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                "echo \"powersave\"| sudo tee /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor".Bash();
+            }
+
+            return services;
+        }
+
+        /// <summary>
+        /// Disable HDMI output on startup.
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        public static IServiceCollection DisableHdmi(this IServiceCollection services)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                "sudo tvservice -o".Bash();
+            }
+
             return services;
         }
     }
 
+
     /// <summary>
     /// 
     /// </summary>
-    public class Startup
+    public class Startup : IDashboardAuthorizationFilter
     {
         /// <summary>
         /// 
         /// </summary>
         /// <param name="app"></param>
-        public void Configure(IApplicationBuilder app)
+        public void Configure(IApplicationBuilder app, IConfiguration config)
         {
-            app.UseHangfireDashboard();
+            if (config.GetValue<bool>("Hangfire:Dashboard"))
+            {
+                app.UseHangfireDashboard(options: new DashboardOptions
+                {
+                    Authorization = new[] { this }
+                });
+            }
         }
+
+        bool IDashboardAuthorizationFilter.Authorize(DashboardContext context) => true;
     }
 
     /// <summary>
@@ -93,21 +150,31 @@ namespace RunningWater.Raspberry
         private static IHostBuilder CreateHostBuilder(string[] args)
         {
             return Host.CreateDefaultBuilder(args)
-                .ConfigureAppConfiguration(config => config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true))
+                .ConfigureAppConfiguration(config =>
+                {
+                    string fileName = args.ElementAtOrDefault(0) ?? "appsettings.json";
+
+                    $"Using {fileName}".Console();
+
+                    config.AddJsonFile(fileName, optional: false, reloadOnChange: true);
+                })
                 .ConfigureWebHostDefaults(builder => builder.UseStartup<Startup>())
                 .ConfigureServices(services =>
                     services
                         .AddSingleton<IUsbController, UhubctlUsbController>()
+                        .DisableUsb()
+                        .DisableHdmi()
+                        .EnablePowerSave()
                         .AddSingleton<IStorage, JsonFileStorage>()
                         .AddSingleton<IWateringJob, WateringJob>()
                         .AddSingleton<IGattServer, GattServer>()
                         .AddSingleton<ILogicService, LogicService>()
-                        .AddSingleton<IJobScheduler, HangfireJobScheduler>()
-                        .AddGattServer()
+                        .AddSingleton<IJobScheduler<IWateringJob>, HangfireJobScheduler<IWateringJob>>()
                         .AddHangfire(config => config
-                            .UseLiteDbStorage()
+                            .UseMemoryStorage()
                             .UseActivator(new DefaultJobActivator(services)))
                         .AddHangfireServer()
+                        .AddGattServer()
                         );
         }
     }

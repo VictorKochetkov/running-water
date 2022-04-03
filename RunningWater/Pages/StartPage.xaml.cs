@@ -8,7 +8,7 @@ namespace RunningWater.Pages
         {
             InitializeComponent();
 
-            BindingContext = Startup.GetViewModel<StartViewModel>();
+            BindingContext = App.GetViewModel<StartViewModel>();
         }
     }
 }

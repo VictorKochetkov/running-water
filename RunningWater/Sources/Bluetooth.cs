@@ -1,148 +1,188 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Security;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Plugin.BLE;
+using Plugin.BLE.Abstractions;
+using Plugin.BLE.Abstractions.Contracts;
+using Plugin.BLE.Abstractions.EventArgs;
 using RunningWater.Interfaces;
-using Shiny;
-using Shiny.BluetoothLE;
-using Xamarin.Essentials;
 
 namespace RunningWater.Sources
 {
     /// <summary>
     /// 
     /// </summary>
-    public abstract class Bluetooth : IBluetooth
+    public class Bluetooth : IBluetooth
     {
         private const string SERVICE_ID = "12345678-1234-5678-1234-56789abcdef0";
         private const string DEVICE_ID = "Running water";
 
-        private readonly static SemaphoreSlim locker = new SemaphoreSlim(1, 1);
+        private readonly static SemaphoreSlim serial = new SemaphoreSlim(1, 1);
 
-        private IBleManager adapter;
-        private IPeripheral device;
-        private IList<IGattCharacteristic> characteristics;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public Bluetooth(IBleManager adapter)
-            => this.adapter = adapter;
+        private IAdapter adapter;
+        private IDevice device;
+        private IReadOnlyList<ICharacteristic> characteristics;
 
         /// <summary>
         /// 
         /// </summary>
-        public bool IsConnected => device?.IsConnected() == true;
-
-        /// <inheritdoc/>
-        public Task WriteAsync(string characteristicId, byte[] data)
+        public Bluetooth()
         {
-            return MainThread.InvokeOnMainThreadAsync(async () =>
-            {
-                await locker.WaitAsync();
-
-                try
-                {
-                    if (!IsConnected)
-                        throw new InvalidOperationException("Device disconnected");
-
-                    if (characteristics?.SingleOrDefault(x => x.Uuid == characteristicId) is not { } target)
-                        throw new InvalidOperationException("Characteristic not found");
-
-                    //var tcs = new TaskCompletionSource<bool>();
-
-                    Console.WriteLine("Writing value");
-
-                    await target.Write(data);
-
-                    //await tcs.Task;
-
-                    Console.WriteLine("Writing finished");
-                }
-                finally
-                {
-                    locker.Release();
-                }
-            });
+            adapter = CrossBluetoothLE.Current.Adapter;
+            adapter.ScanMode = ScanMode.LowLatency;
         }
 
         /// <inheritdoc/>
-        public Task<byte[]> ReadAsync(string characteristicId)
+        public bool IsConnected => device?.State == DeviceState.Connected;
+
+        /// <inheritdoc/>
+        public async Task WriteAsync(string characteristicId, byte[] data)
         {
-            return MainThread.InvokeOnMainThreadAsync(async () =>
+            await serial.WaitAsync();
+
+            try
             {
-                await locker.WaitAsync();
+                if (!IsConnected)
+                    throw new InvalidOperationException("Device disconnected");
 
-                try
-                {
-                    if (!IsConnected)
-                        throw new InvalidOperationException("Device disconnected");
+                if (characteristics?.SingleOrDefault(x => x.Uuid == characteristicId) is not { } target)
+                    throw new InvalidOperationException("Characteristic not found");
 
-                    if (characteristics?.SingleOrDefault(x => x.Uuid == characteristicId) is not { } target)
-                        throw new InvalidOperationException("Characteristic not found");
+                if (!await target.WriteAsync(await CompressAsync(data)))
+                    throw new Exception();
+            }
+            finally
+            {
+                serial.Release();
+            }
+        }
 
-                    //var tcs = new TaskCompletionSource<byte[]>();
+        /// <inheritdoc/>
+        public async Task<byte[]> ReadAsync(string characteristicId)
+        {
+            await serial.WaitAsync();
 
-                    Console.WriteLine("Reading value");
+            try
+            {
+                if (!IsConnected)
+                    throw new InvalidOperationException("Device disconnected");
 
-                    var result = await target.Read();
+                if (characteristics?.SingleOrDefault(x => x.Uuid == characteristicId) is not { } target)
+                    throw new InvalidOperationException("Characteristic not found");
 
-                    //var result = await tcs.Task;
-
-                    Console.WriteLine("Reading finished");
-
-                    return result.Data;
-                }
-                finally
-                {
-                    locker.Release();
-                }
-            });
+                return await DecompressAsync(await target.ReadAsync());
+            }
+            finally
+            {
+                serial.Release();
+            }
         }
 
         /// <inheritdoc/>
         public async Task TryConnectAsync()
         {
-            if (IsConnected)
-                return;
+            // Searching for device if needed
+            device ??= await SearchDeviceAsync();
 
-            if (await adapter.RequestAccess() != AccessState.Available)
-                throw new SecurityException("Permissions not granted");
+            // Connecting to found device
+            await adapter.ConnectToDeviceAsync(device, new ConnectParameters(true, true));
 
-            if (device == null)
-            {
-                Console.WriteLine("Searching for device");
-                device = await adapter.ScanUntilPeripheralFound(DEVICE_ID);
-            }
-
-            Console.WriteLine("Connecting to device");
-
-            await device.ConnectAsync(new ConnectionConfig
-            {
-                AndroidConnectionPriority = ConnectionPriority.High,
-                AutoConnect = true,
-            });
-
-            Console.WriteLine("Reading service and characteristics");
-
-            characteristics = await (await device
-                .GetKnownService(SERVICE_ID, throwIfNotFound: true))
-                .GetCharacteristicsAsync();
+            // Retrieving target GATT service and reading all it's characteristics
+            characteristics = (await (await device
+                .GetServicesAsync()).FirstOrDefault(x => x.Id == Guid.Parse(SERVICE_ID))
+                .GetCharacteristicsAsync());
 
             if (!IsConnected)
                 throw new Exception("Connection failed");
+        }
 
-            Console.WriteLine("Connection successfull");
+        /// <summary>
+        /// Search for target device.
+        /// </summary>
+        /// <returns>Found device.</returns>
+        private async Task<IDevice> SearchDeviceAsync()
+        {
+            var tcs = new TaskCompletionSource<IDevice>();
+
+            var scanTimeoutElapsed = new EventHandler(async (sender, args) =>
+            {
+                // Restarting BLE scanning when timeout occured
+                // So device searching progress is infinite
+                await adapter.StartScanningForDevicesAsync();
+            });
+
+            var deviceDiscovered = new EventHandler<DeviceEventArgs>((sender, args) =>
+            {
+                if (args.Device.Name == DEVICE_ID)
+                {
+                    tcs.TrySetResult(args.Device);
+                }
+            });
+
+            adapter.ScanTimeoutElapsed += scanTimeoutElapsed;
+            adapter.DeviceDiscovered += deviceDiscovered;
+
+            // Start BLE scanning
+            await adapter.StartScanningForDevicesAsync();
+
+            // Waiting for search task to be completed
+            var device = await tcs.Task;
+
+            await adapter.StopScanningForDevicesAsync();
+
+            adapter.ScanTimeoutElapsed -= scanTimeoutElapsed;
+            adapter.DeviceDiscovered -= deviceDiscovered;
+
+            return device;
+        }
+
+        /// <summary>
+        /// Platform specific method to enabled bluetooth.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual Task EnableBluetoothAsync() => Task.FromResult(true);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        private static async Task<byte[]> CompressAsync(byte[] bytes)
+        {
+            using (var input = new MemoryStream(bytes))
+            using (var output = new MemoryStream())
+            {
+                using (var compressor = new BrotliStream(output, CompressionLevel.Optimal))
+                {
+                    await input.CopyToAsync(compressor);
+                }
+
+                return output.ToArray();
+            }
         }
 
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="bytes"></param>
         /// <returns></returns>
-        protected abstract Task EnableBluetoothAsync();
+        private static async Task<byte[]> DecompressAsync(byte[] bytes)
+        {
+            using (var input = new MemoryStream(bytes))
+            using (var output = new MemoryStream())
+            {
+                using (var decompressor = new BrotliStream(input, CompressionMode.Decompress))
+                {
+                    await decompressor.CopyToAsync(output);
+                }
+
+                return output.ToArray();
+            }
+        }
     }
 }

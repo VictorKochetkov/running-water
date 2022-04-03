@@ -1,19 +1,98 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <pages:BasePage
     xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:t="clr-namespace:RunningWater.Helpers"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:viewmodels="clr-namespace:RunningWater.ViewModels"
     xmlns:pages="clr-namespace:RunningWater.Pages"
+    xmlns:controls="clr-namespace:RunningWater.Controls"
     xmlns:xct="http://xamarin.com/schemas/2020/toolkit"
+    xmlns:yummy="clr-namespace:Xamarin.Forms.PancakeView;assembly=Xamarin.Forms.PancakeView"
     x:Class="RunningWater.Pages.MainPage"
     x:DataType="viewmodels:MainViewModel">
 
-    <ScrollView
+    <ContentPage.Resources>
+        <ResourceDictionary>
+
+            <DataTemplate
+                x:Key="TimeTemplate"
+                x:DataType="viewmodels:TimeItemViewModel">
+
+                <ContentView>
+                    <yummy:PancakeView
+                        BackgroundColor="{DynamicResource main}"
+                        Margin="0,4,6,4"
+                        Padding="16,0"
+                        CornerRadius="20"
+                        HeightRequest="40"
+                        xct:TouchEffect.NativeAnimation="True"
+                        xct:TouchEffect.Command="{Binding TimeTapCommand, Source={RelativeSource AncestorType={x:Type viewmodels:MainViewModel}}}"
+                        xct:TouchEffect.CommandParameter="{Binding .}">
+
+                        <Label
+                            Text="{Binding Value}"
+                            TextColor="{DynamicResource white}"
+                            VerticalOptions="Center"
+                            FontSize="Body"
+                            FontFamily="NunitoMedium" />
+
+                    </yummy:PancakeView>
+                </ContentView>
+
+            </DataTemplate>
+
+            <DataTemplate
+                x:Key="TitleTemplate"
+                x:DataType="viewmodels:TitleItemViewModel">
+
+                <ContentView>
+                    <yummy:PancakeView
+                        BackgroundColor="Transparent"
+                        Margin="0,4,6,4"
+                        Padding="16,0"
+                        Border="{yummy:BorderMarkup Color=#29ab87, Thickness=2}"
+                        CornerRadius="20"
+                        HeightRequest="40"
+                        xct:TouchEffect.NativeAnimation="True"
+                        xct:TouchEffect.Command="{Binding AddTimeTapCommand, Source={RelativeSource AncestorType={x:Type viewmodels:MainViewModel}}}"
+                        xct:TouchEffect.CommandParameter="{Binding .}">
+
+                        <Label
+                            Text="{Binding Title}"
+                            TextColor="{DynamicResource main}"
+                            VerticalOptions="Center"
+                            FontSize="Body"
+                            FontFamily="NunitoMedium" />
+
+                    </yummy:PancakeView>
+                </ContentView>
+
+            </DataTemplate>
+
+            <viewmodels:TimeItemTemplateSelector
+                x:Key="ItemTemplateSelector"
+                TimeTemplate="{StaticResource TimeTemplate}"
+                TitleTemplate="{StaticResource TitleTemplate}" />
+
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid
         xct:SafeAreaEffect.SafeArea="True"
-        Padding="18,32,18,0">
+        Padding="0,32">
+
+        <Grid.RowDefinitions>
+            <RowDefinition
+                Height="Auto" />
+            <RowDefinition
+                Height="*" />
+            <RowDefinition
+                Height="Auto" />
+        </Grid.RowDefinitions>
 
         <StackLayout
-            Spacing="16">
+            Padding="16,0"
+            Spacing="10">
 
             <Grid
                 Margin="0,0,0,16">
@@ -25,9 +104,17 @@
                 </Grid.ColumnDefinitions>
 
                 <Label
-                    Text="Hello!"
+                    Text="{t:Translate 'MainPage.Title'}"
                     FontSize="28"
-                    FontAttributes="Bold" />
+                    FontFamily="NunitoBold">
+                    <Label.FormattedText>
+                        <FormattedString>
+                            <Span Text="{t:Translate 'MainPage.Title'}"/>
+                            <Span Text=" "/>
+                            <Span Text="{Binding PlantEmoji, Mode=OneTime}"/>
+                        </FormattedString>
+                    </Label.FormattedText>
+                </Label>
 
                 <ActivityIndicator
                     Grid.Column="1"
@@ -49,28 +136,73 @@
                 </Grid.ColumnDefinitions>
 
                 <Label
-                    Text="Watering state"
-                    VerticalOptions="Center" />
+                    Text="{t:Translate 'MainPage.Switch.Disabled'}"
+                    FontFamily="NunitoRegular"
+                    VerticalOptions="Center">
+                    <Label.Triggers>
+                        <DataTrigger
+                            TargetType="Label"
+                            Binding="{Binding IsEnabled}"
+                            Value="True">
+                            <Setter
+                                Property="Text"
+                                Value="{t:Translate 'MainPage.Switch.Enabled'}" />
+                        </DataTrigger>
+                    </Label.Triggers>
+                </Label>
 
-                <Switch
+                <controls:BaseSwitch
                     Grid.Column="1"
                     VerticalOptions="Center"
+                    Command="{Binding StateChangedCommand}"
                     IsToggled="{Binding IsEnabled, Mode=TwoWay}" />
 
             </Grid>
 
             <BoxView
                 HeightRequest="1"
-                BackgroundColor="#11000000" />
-
-            <Editor
-                Text="{Binding Cron}"
-                Placeholder="Enter cron string" />
-
-
+                BackgroundColor="{DynamicResource line}"
+                Margin="0,0,0,-5"/>
 
         </StackLayout>
 
-    </ScrollView>
+        <ScrollView
+            Grid.Row="1"
+            Padding="16,0">
+
+            <controls:CalendarView
+                Months="{Binding MonthsCollection}"
+                DayTapCommand="{Binding CalendarDayTapCommand}" />
+
+        </ScrollView>
+
+        <StackLayout
+            Grid.Row="2"
+            Padding="16,0"
+            Spacing="10">
+
+            <BoxView
+                HeightRequest="1"
+                BackgroundColor="{DynamicResource line}"
+                Margin="0,-5,0,0"/>
+
+            <Label
+                Text="{t:Translate 'MainPage.Time.Title'}"
+                FontSize="Body"
+                TextColor="{DynamicResource secondary}"
+                FontFamily="NunitoRegular" />
+
+            <FlexLayout
+                BindableLayout.ItemsSource="{Binding TimeCollection}"
+                BindableLayout.ItemTemplateSelector="{StaticResource ItemTemplateSelector}"
+                Direction="Row"
+                Wrap="Wrap"
+                JustifyContent="Start"
+                AlignItems="Start"
+                AlignContent="Start" />
+
+        </StackLayout>
+
+    </Grid>
 
 </pages:BasePage>
