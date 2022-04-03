@@ -19,6 +19,6 @@ namespace RunningWater.ViewModels
         /// <summary>
         /// 
         /// </summary>
-        public virtual string Value => Time.ToLocalizedString();
+        public virtual string Value => Time.ToString(@"hh\:mm");
     }
 }

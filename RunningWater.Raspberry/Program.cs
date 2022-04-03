@@ -156,7 +156,7 @@ namespace RunningWater.Raspberry
 
                     $"Using {fileName}".Console();
 
-                    config.AddJsonFile(fileName, optional: false, reloadOnChange: true);
+                    config.AddJsonFile(fileName, optional: false, reloadOnChange: false);
                 })
                 .ConfigureWebHostDefaults(builder => builder.UseStartup<Startup>())
                 .ConfigureServices(services =>

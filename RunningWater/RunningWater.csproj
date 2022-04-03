@@ -19,12 +19,13 @@
     <PackageReference Include="Xamarin.Essentials" Version="1.7.1" />
     <PackageReference Include="ReactiveUI.XamForms" Version="17.1.50" />
     <PackageReference Include="ReactiveUI.Fody" Version="17.1.50" />
-    <PackageReference Include="Xamarin.CommunityToolkit" Version="2.0.0" />
+    <PackageReference Include="Xamarin.CommunityToolkit" Version="2.0.1" />
     <PackageReference Include="System.Text.Json" Version="6.0.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
     <PackageReference Include="Xamarin.Forms.PancakeView" Version="2.3.0.759" />
     <PackageReference Include="Rg.Plugins.Popup" Version="2.1.0" />
     <PackageReference Include="Plugin.BLE" Version="2.2.0-pre2" />
+    <PackageReference Include="Xamarin.FFImageLoading.Forms" Version="2.4.11.982" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Plugin.BLE" />
@@ -50,6 +51,7 @@
     <None Remove="Rg.Plugins.Popup" />
     <None Remove="Converters\" />
     <None Remove="Helpers\" />
+    <None Remove="Xamarin.FFImageLoading.Forms" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="ViewModels\" />
@@ -66,5 +68,8 @@
     <EmbeddedResource Include="Resources\Fonts\Nunito-Regular.ttf" />
     <EmbeddedResource Include="Resources\Fonts\Nunito-Medium.ttf" />
     <EmbeddedResource Include="Resources\Fonts\Nunito-Bold.ttf" />
+    <EmbeddedResource Include="..\RunningWater.iOS\Assets.xcassets\AppIcon.appiconset\Icon180.png">
+      <Link>Resources\Icon180.png</Link>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

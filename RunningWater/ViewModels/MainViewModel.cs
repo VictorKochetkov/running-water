@@ -194,7 +194,7 @@ namespace RunningWater.ViewModels
 
                 yield return new DialogOption
                 {
-                    Title = time.ToLocalizedString(),
+                    Title = time.ToString(@"hh\:mm"),
                     IsDisabled = TimeCollection.Any(viewModel => viewModel is TimeItemViewModel timeViewModel && timeViewModel.Time == time),
                     Command = new Command(() => AddTime(time)),
                 };
