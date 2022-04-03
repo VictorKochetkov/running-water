@@ -2,52 +2,43 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleLocalizations</key>
-    <array>
-      <string>en</string>
-      <string>ru</string>
-    </array>
-    <key>UIDeviceFamily</key>
-    <array>
-        <integer>1</integer>
-    </array>
-    <key>MinimumOSVersion</key>
-	<string>10.0</string>
-    <key>UISupportedInterfaceOrientations</key>
-    <array>
-        <string>UIInterfaceOrientationPortrait</string>
-    </array>
-    <key>MinimumOSVersion</key>
-    <string>8.0</string>
-    <key>CFBundleDisplayName</key>
-    <string>RunningWater</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.banana.RunningWater</string>
-    <key>CFBundleVersion</key>
-    <string>1.0</string>
-    <key>UILaunchStoryboardName</key>
-    <string>LaunchScreen</string>
-    <key>CFBundleName</key>
-    <string>RunningWater</string>
-    <key>XSAppIconAssets</key>
-    <string>Assets.xcassets/AppIcon.appiconset</string>
-    <key>UIBackgroundModes</key>
+	<key>CFBundleLocalizations</key>
 	<array>
-		<!--for connecting to devices (client)-->
+		<string>en</string>
+		<string>ru</string>
+	</array>
+	<key>UIDeviceFamily</key>
+	<array>
+		<integer>1</integer>
+	</array>
+	<key>MinimumOSVersion</key>
+	<string>8.0</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>CFBundleDisplayName</key>
+	<string>Running Water</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.banana.running-water</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>CFBundleName</key>
+	<string>RunningWater</string>
+	<key>XSAppIconAssets</key>
+	<string>Assets.xcassets/AppIcon.appiconset</string>
+	<key>UIBackgroundModes</key>
+	<array>
 		<string>bluetooth-central</string>
-		<!--for server configurations if needed-->
 		<string>bluetooth-peripheral</string>
 	</array>
-
-	<!--Description of the Bluetooth request message (required on iOS 10, deprecated)-->
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>YOUR CUSTOM MESSAGE</string>
-
-	<!--Description of the Bluetooth request message (required on iOS 13)-->
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>YOUR CUSTOM MESSAGE</string>
-
-    <key>NSLocationWhenInUseUsageDescription</key>
-    <string>YOUR CUSTOM MESSAGE</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>YOUR CUSTOM MESSAGE</string>
 </dict>
 </plist>
