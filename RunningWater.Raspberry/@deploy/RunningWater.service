@@ -10,6 +10,9 @@ ExecStart=/home/pi/RunningWater.Raspberry /home/pi/appsettings.json
 # to query logs using journalctl, set a logical name here
 SyslogIdentifier=RunningWater
 
+# CPUQuota is an absolute limit on how much CPU time is granted even if nothing else is going on
+CPUQuota=5%
+
 # Use your username to keep things simple.
 # If you pick a different user, make sure dotnet and all permissions are set correctly to run the app
 # To update permissions, use 'chown yourusername -R /srv/HelloWorld' to take ownership of the folder and files,
