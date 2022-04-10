@@ -90,81 +90,41 @@
                 Height="Auto" />
         </Grid.RowDefinitions>
 
-        <StackLayout
-            Padding="16,0"
-            Spacing="10">
+        <Grid
+            Margin="16,0,16,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition
+                    Width="*" />
+                <ColumnDefinition
+                    Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-            <Grid
-                Margin="0,0,0,16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition
-                        Width="*" />
-                    <ColumnDefinition
-                        Width="Auto" />
-                </Grid.ColumnDefinitions>
+            <Label
+                Text="{t:Translate 'MainPage.Title'}"
+                FontSize="28"
+                FontFamily="NunitoBold">
+                <Label.FormattedText>
+                    <FormattedString>
+                        <Span
+                            Text="{t:Translate 'MainPage.Title'}" />
+                        <Span
+                            Text=" " />
+                        <Span
+                            Text="{Binding PlantEmoji, Mode=OneTime}" />
+                    </FormattedString>
+                </Label.FormattedText>
+            </Label>
 
-                <Label
-                    Text="{t:Translate 'MainPage.Title'}"
-                    FontSize="28"
-                    FontFamily="NunitoBold">
-                    <Label.FormattedText>
-                        <FormattedString>
-                            <Span Text="{t:Translate 'MainPage.Title'}"/>
-                            <Span Text=" "/>
-                            <Span Text="{Binding PlantEmoji, Mode=OneTime}"/>
-                        </FormattedString>
-                    </Label.FormattedText>
-                </Label>
+            <ActivityIndicator
+                Grid.Column="1"
+                WidthRequest="16"
+                HeightRequest="16"
+                VerticalOptions="Center"
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                IsEnabled="{Binding IsBusy}" />
 
-                <ActivityIndicator
-                    Grid.Column="1"
-                    WidthRequest="16"
-                    HeightRequest="16"
-                    VerticalOptions="Center"
-                    IsRunning="{Binding IsBusy}"
-                    IsVisible="{Binding IsBusy}"
-                    IsEnabled="{Binding IsBusy}" />
-
-            </Grid>
-
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition
-                        Width="*" />
-                    <ColumnDefinition
-                        Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <Label
-                    Text="{t:Translate 'MainPage.Switch.Disabled'}"
-                    FontFamily="NunitoRegular"
-                    VerticalOptions="Center">
-                    <Label.Triggers>
-                        <DataTrigger
-                            TargetType="Label"
-                            Binding="{Binding IsEnabled}"
-                            Value="True">
-                            <Setter
-                                Property="Text"
-                                Value="{t:Translate 'MainPage.Switch.Enabled'}" />
-                        </DataTrigger>
-                    </Label.Triggers>
-                </Label>
-
-                <controls:BaseSwitch
-                    Grid.Column="1"
-                    VerticalOptions="Center"
-                    Command="{Binding StateChangedCommand}"
-                    IsToggled="{Binding IsEnabled, Mode=TwoWay}" />
-
-            </Grid>
-
-            <BoxView
-                HeightRequest="1"
-                BackgroundColor="{DynamicResource line}"
-                Margin="0,0,0,-5"/>
-
-        </StackLayout>
+        </Grid>
 
         <ScrollView
             Grid.Row="1"
@@ -180,11 +140,6 @@
             Grid.Row="2"
             Padding="16,0"
             Spacing="10">
-
-            <BoxView
-                HeightRequest="1"
-                BackgroundColor="{DynamicResource line}"
-                Margin="0,-5,0,0"/>
 
             <Label
                 Text="{t:Translate 'MainPage.Time.Title'}"
