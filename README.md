@@ -15,7 +15,7 @@ Written on Node.js using [bleno](https://github.com/noble/bleno) library and hos
 ## Watering job
 Node.js [script](https://github.com/VictorKochetkov/running-water/blob/main/RunningWater.Raspberry/src/watering-job.js) scheduled as cron job which powers on/off USB ports that pumps connected to. For manage USB ports [uhubctl](https://github.com/mvp/uhubctl) library is used.
 
-## Mobile application
+## Mobile application (iOS & Android)
 Written on Xamarin.Forms for iOS & Android. User-friendly interface to configure watering schedule. Communicates with GATT server via BLE.
 
 ## Total hardware 💪 
