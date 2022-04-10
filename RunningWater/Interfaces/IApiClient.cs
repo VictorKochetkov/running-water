@@ -18,19 +18,6 @@ namespace RunningWater.Interfaces
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="enabled"></param>
-        /// <returns></returns>
-        Task StateWriteAsync(bool enabled);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        Task<bool> StateReadAsync();
-
-        /// <summary>
-        /// 
-        /// </summary>
         /// <param name="jobs"></param>
         /// <returns></returns>
         Task JobsWriteAsync(IEnumerable<DateTimeOffset> jobs);

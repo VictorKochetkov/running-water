@@ -17,14 +17,14 @@ namespace RunningWater.Sources
     /// </summary>
     public class GattCharacteristicAttribute : Attribute
     {
-        public string Id { get; set; }
+        public Guid Id { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="id"></param>
         public GattCharacteristicAttribute(string id)
-            => Id = id;
+            => Id = Guid.Parse(id);
     }
 
     /// <summary>
@@ -59,13 +59,7 @@ namespace RunningWater.Sources
             /// <summary>
             /// 
             /// </summary>
-            [GattCharacteristic("12345678-1234-5678-1234-56789abcdef1")]
-            State,
-
-            /// <summary>
-            /// 
-            /// </summary>
-            [GattCharacteristic("12345678-1234-5678-1234-56789abcdef2")]
+            [GattCharacteristic("13333333333333333333333333330002")]
             Jobs,
         }
 
@@ -94,14 +88,6 @@ namespace RunningWater.Sources
         /// <inheritdoc/>
         public Task TryConnectAsync()
             => retryHandler.ExecuteAsync(() => bluetooth.TryConnectAsync());
-
-        /// <inheritdoc/>
-        public Task StateWriteAsync(bool enabled)
-            => WriteAsync(Property.State, new { enabled });
-
-        /// <inheritdoc/>
-        public Task<bool> StateReadAsync()
-            => ReadAsync<bool>(Property.State);
 
         /// <inheritdoc/>
         public Task JobsWriteAsync(IEnumerable<DateTimeOffset> jobs)

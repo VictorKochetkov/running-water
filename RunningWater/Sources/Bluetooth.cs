@@ -19,8 +19,8 @@ namespace RunningWater.Sources
     /// </summary>
     public class Bluetooth : IBluetooth
     {
-        private const string SERVICE_ID = "12345678-1234-5678-1234-56789abcdef0";
-        private const string DEVICE_ID = "Running water";
+        private const string SERVICE_ID = "13333333333333333333333333333337";
+        private const string DEVICE_ID = "Running Water";
 
         private readonly static SemaphoreSlim serial = new SemaphoreSlim(1, 1);
 
@@ -41,7 +41,7 @@ namespace RunningWater.Sources
         public bool IsConnected => device?.State == DeviceState.Connected;
 
         /// <inheritdoc/>
-        public async Task WriteAsync(string characteristicId, byte[] data)
+        public async Task WriteAsync(Guid characteristicId, byte[] data)
         {
             await serial.WaitAsync();
 
@@ -50,7 +50,7 @@ namespace RunningWater.Sources
                 if (!IsConnected)
                     throw new InvalidOperationException("Device disconnected");
 
-                if (characteristics?.SingleOrDefault(x => x.Uuid == characteristicId) is not { } target)
+                if (characteristics?.SingleOrDefault(x => x.Uuid == characteristicId.ToString()) is not { } target)
                     throw new InvalidOperationException("Characteristic not found");
 
                 if (!await target.WriteAsync(await CompressAsync(data)))
@@ -63,7 +63,7 @@ namespace RunningWater.Sources
         }
 
         /// <inheritdoc/>
-        public async Task<byte[]> ReadAsync(string characteristicId)
+        public async Task<byte[]> ReadAsync(Guid characteristicId)
         {
             await serial.WaitAsync();
 
@@ -72,7 +72,7 @@ namespace RunningWater.Sources
                 if (!IsConnected)
                     throw new InvalidOperationException("Device disconnected");
 
-                if (characteristics?.SingleOrDefault(x => x.Uuid == characteristicId) is not { } target)
+                if (characteristics?.SingleOrDefault(x => x.Uuid == characteristicId.ToString()) is not { } target)
                     throw new InvalidOperationException("Characteristic not found");
 
                 return await DecompressAsync(await target.ReadAsync());
@@ -86,6 +86,8 @@ namespace RunningWater.Sources
         /// <inheritdoc/>
         public async Task TryConnectAsync()
         {
+            var a = Guid.Parse(SERVICE_ID);
+
             // Searching for device if needed
             device ??= await SearchDeviceAsync();
 
@@ -94,7 +96,7 @@ namespace RunningWater.Sources
 
             // Retrieving target GATT service and reading all it's characteristics
             characteristics = (await (await device
-                .GetServicesAsync()).FirstOrDefault(x => x.Id == Guid.Parse(SERVICE_ID))
+                .GetServicesAsync()).Single()
                 .GetCharacteristicsAsync());
 
             if (!IsConnected)
@@ -154,6 +156,7 @@ namespace RunningWater.Sources
         /// <returns></returns>
         private static async Task<byte[]> CompressAsync(byte[] bytes)
         {
+            return bytes;
             using (var input = new MemoryStream(bytes))
             using (var output = new MemoryStream())
             {
@@ -173,6 +176,7 @@ namespace RunningWater.Sources
         /// <returns></returns>
         private static async Task<byte[]> DecompressAsync(byte[] bytes)
         {
+            return bytes;
             using (var input = new MemoryStream(bytes))
             using (var output = new MemoryStream())
             {

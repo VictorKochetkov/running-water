@@ -30,9 +30,7 @@ namespace RunningWater.ViewModels
 
             await DoTask(async () =>
             {
-                await Navigation.NavigateAsync<MainPage>(
-                    await _apiClient.StateReadAsync(),
-                    await _apiClient.JobsReadAsync());
+                await Navigation.NavigateAsync<MainPage>(await _apiClient.JobsReadAsync());
             });
         }
     }

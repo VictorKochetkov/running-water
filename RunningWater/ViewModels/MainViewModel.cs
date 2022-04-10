@@ -22,11 +22,6 @@ namespace RunningWater.ViewModels
         private readonly IApiClient _apiClient;
 
         /// <summary>
-        /// Command to be executed when watering state toggle was changed.
-        /// </summary>
-        public ICommand StateChangedCommand { get; }
-
-        /// <summary>
         /// Command to be executed when `Add` chip tapped.
         /// </summary>
         public ICommand AddTimeTapCommand { get; }
@@ -54,11 +49,6 @@ namespace RunningWater.ViewModels
             : base(navigationService, dialogService)
         {
             _apiClient = apiClient;
-
-            StateChangedCommand = BuildTaskCommand(() =>
-            {
-                return apiClient.StateWriteAsync(IsEnabled);
-            });
 
             AddTimeTapCommand = BuildTaskCommand(() =>
             {
@@ -95,12 +85,6 @@ namespace RunningWater.ViewModels
         /// 
         /// </summary>
         [Reactive]
-        public bool IsEnabled { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        [Reactive]
         public ObservableCollection<CalendarMonthItemViewModel> MonthsCollection { get; private set; } = new ObservableCollection<CalendarMonthItemViewModel>();
 
         /// <summary>
@@ -117,9 +101,7 @@ namespace RunningWater.ViewModels
         {
             base.Prepare(arguments);
 
-            IsEnabled = (bool)arguments.ElementAt(0);
-
-            var jobs = (IEnumerable<DateTimeOffset>)arguments.ElementAt(1);
+            var jobs = (IEnumerable<DateTimeOffset>)arguments.Single();
 
             foreach (var time in jobs.Select(job => job.TimeOfDay).Distinct())
             {

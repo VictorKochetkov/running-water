@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace RunningWater.Interfaces
 {
@@ -25,13 +26,13 @@ namespace RunningWater.Interfaces
         /// <param name="characteristicId">Characteristic id.</param>
         /// <param name="data">Bytes array to be written.</param>
         /// <returns>Awaitable task.</returns>
-        Task WriteAsync(string characteristicId, byte[] data);
+        Task WriteAsync(Guid characteristicId, byte[] data);
 
         /// <summary>
         /// Read bytes array from GATT characterictic.
         /// </summary>
         /// <param name="characteristicId">Characteristic id.</param>
         /// <returns>Awaitable task.</returns>
-        Task<byte[]> ReadAsync(string characteristicId);
+        Task<byte[]> ReadAsync(Guid characteristicId);
     }
 }
