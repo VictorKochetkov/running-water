@@ -9,13 +9,16 @@ Project for automatic plants watering built with Raspberry Pi
 # Composition
 This project has following software parts:
 
-⭐ **Bluetooth GATT server**
-> Written on Node.js using [bleno](https://github.com/noble/bleno) library and hosted as [systemd service](https://github.com/VictorKochetkov/running-water/blob/main/RunningWater.Raspberry/deploy/RunningWater.service) on Raspberry Pi.
+## Bluetooth GATT server
+Written on Node.js using [bleno](https://github.com/noble/bleno) library and hosted as [systemd service](https://github.com/VictorKochetkov/running-water/blob/main/RunningWater.Raspberry/deploy/RunningWater.service) on Raspberry Pi. This provides communication API for mobile app via BLE. 
 
-⭐ Watering job
-> Node.js [script](https://github.com/VictorKochetkov/running-water/blob/main/RunningWater.Raspberry/src/watering-job.js) scheduled as cron job which powers on/off USB ports that pumps connected to. For manage USB ports [uhubctl](https://github.com/mvp/uhubctl) library is used.
+## Watering job
+Node.js [script](https://github.com/VictorKochetkov/running-water/blob/main/RunningWater.Raspberry/src/watering-job.js) scheduled as cron job which powers on/off USB ports that pumps connected to. For manage USB ports [uhubctl](https://github.com/mvp/uhubctl) library is used.
 
-⭐ **Mobile application to configure plants watering**
-> Written on Xamarin.Forms for iOS & Android.
+## Mobile application
+Written on Xamarin.Forms for iOS & Android. Communicates with GATT server via BLE.
 
-And hardware 💪 - Raspberry Pi, USB pump, silicone tube, power bank (optional of course).
+## Total hardware 💪 
+- Raspberry Pi
+- water pump with USB connector & silicone tube
+- power bank (optional of course)
